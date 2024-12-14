@@ -1,5 +1,5 @@
 const Router = require('koa-router')
-const { parseDouyinUrl } = require('../utils/douyin')
+const { parseDouyinUrl, getInfoHtml } = require('../utils/douyin')
 const { downloadVideo } = require('../utils/downloader')
 const path = require('path')
 const fs = require('fs')
@@ -30,6 +30,31 @@ router.post('/parse', async (ctx) => {
 		ctx.body = {
 			success: true,
 			data: videoInfo
+		}
+	} catch (error) {
+		ctx.status = 500
+		ctx.body = {
+			success: false,
+			error: error.message
+		}
+	}
+})
+
+router.post('/getHtml', async (ctx) => {
+	try {
+		const { url } = ctx.request.body
+
+		if (!url) {
+			ctx.status = 400
+			ctx.body = { error: '请提供URL地址' }
+			return
+		}
+
+		const data = await getInfoHtml(url)
+
+		ctx.body = {
+			success: true,
+			data: data
 		}
 	} catch (error) {
 		ctx.status = 500
