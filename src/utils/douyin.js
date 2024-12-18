@@ -1,5 +1,6 @@
 const axios = require('axios')
 const cheerio = require('cheerio')
+const puppeteer = require('puppeteer')
 
 async function parseDouyinUrl(shareUrl, logs = []) {
 	try {
@@ -22,78 +23,75 @@ async function parseDouyinUrl(shareUrl, logs = []) {
 
 // 获取视频ID
 function extractVideoId(url) {
-	console.log('extractVideoIdX1', url)
 	// 从URL中提取视频ID的逻辑
 	const match = url.match(/(?:video|note)\/(\d+)/)
 	return match ? match[1] : null
 }
 
-// 获取真实视频地址
+// 构建真实视频地址=>https://www.douyin.com/video/7326764458792045833
 async function getVideoInfoFromApi(videoId) {
-	console.log('getVideoInfoFromApi222', videoId)
-	// 拼接抖音链接，https://www.douyin.com/video/7326764458792045833
 	const videoUrl2 = `https://www.douyin.com/video/${videoId}`
 	console.log('videoUrl2', videoUrl2)
-
 	return
+}
 
+// 定义异步函数获取页面内容并提取 video 标签的 src
+async function getVideoSrc(url) {
 	try {
-		const response = await axios.get(videoUrl2)
-		const $ = cheerio.load(response.data)
+		// 使用 puppeteer 获取页面的 HTML
+		const html = await getHtmlWithPuppeteer(url)
+		// console.log('获取的内容', html)
 
-		console.log('videoUrl4444', $)
+		// 使用 cheerio 解析 HTML
+		const $ = cheerio.load(html)
 
-		// Find video element and get its source URL
-		const videoElement = $('video source')
-		const videoUrl = videoElement.attr('src')
+		// 存储所有 video 标签的 src 属性
+		const tags = []
 
-		console.log('videoUrl5555', videoUrl)
+		// 查找所有 video 标签并获取 src 属性
+		$('div').each((index, element) => {
+			const src = $(element).text()
+			if (src) {
+				tags.push(src)
+			}
+		})
 
-		if (!videoUrl) {
-			throw new Error('Video URL not found')
-		}
-
-		return {
-			videoUrl
-			// You can extract more video information here if needed
-		}
-	} catch (error) {
-		console.error('Error fetching video info:', error)
-		throw new Error('Failed to get video information')
+		console.log('tags', tags)
+		return tags // 返回 videoSrcs 数组
+	} catch (err) {
+		console.error('Error:', err)
 	}
 }
 
-// 获取网页的 HTML 内容
-async function getInfoHtml(url) {
-	try {
-		const response = await axios.get(url, {
-			headers: {
-				'User-Agent':
-					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' // 设置自定义请求头
-			},
-			timeout: 10000 // 设置请求超时为 10 秒
-			// 可根据需要添加代理设置
-			// proxy: {
-			//   host: 'proxy_host',
-			//   port: 8080
-			// },
-		})
+// 获取网页的 HTML 内容（适用于动态加载的网页）
+async function getHtmlWithPuppeteer(url) {
+	// 启动一个新的 Puppeteer 浏览器实例
+	const browser = await puppeteer.launch({
+		headless: false, // 设置为 false 以便看到浏览器过程
+		args: ['--no-sandbox', '--disable-setuid-sandbox'] // 在某些环境下可能需要这些参数
+	})
 
-		if (response.status === 200) {
-			// 返回网页的 HTML 内容
-			console.log('HTML Content Retrieved:', response.data.substring(0, 200)) // 打印前200个字符，避免输出过多
-			return response.data
-		} else {
-			console.error('Failed to retrieve HTML. Status code:', response.status)
-			throw new Error(`Request failed with status ${response.status}`)
-		}
-	} catch (error) {
-		console.error('Error fetching HTML:', error.message)
-		throw new Error('Failed to fetch the HTML content')
-	}
+	// 打开一个新页面
+	const page = await browser.newPage()
+
+	// 设置一些浏览器标头（防止被识别为爬虫）
+	await page.setUserAgent(
+		'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+	)
+
+	// 模拟屏幕分辨率
+	await page.setViewport({ width: 1280, height: 800 })
+
+	await page.goto(url, { waitUntil: 'networkidle2' })
+
+	const html = await page.content()
+
+	// 关闭浏览器实例
+	await browser.close()
+	return html
 }
 
 module.exports = {
 	parseDouyinUrl,
-	getInfoHtml
+	getVideoSrc
 }

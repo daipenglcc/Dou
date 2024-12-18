@@ -1,5 +1,5 @@
 const Router = require('koa-router')
-const { parseDouyinUrl, getInfoHtml } = require('../utils/douyin')
+const { parseDouyinUrl, getVideoSrc } = require('../utils/douyin')
 const { downloadVideo } = require('../utils/downloader')
 const path = require('path')
 const fs = require('fs')
@@ -50,7 +50,7 @@ router.post('/getHtml', async (ctx) => {
 			return
 		}
 
-		const data = await getInfoHtml(url)
+		const data = await getVideoSrc(url)
 
 		ctx.body = {
 			success: true,
