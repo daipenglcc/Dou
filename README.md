@@ -113,8 +113,17 @@ node app.js
 # 构建镜像
 docker build -t douyin-server .
 
-# 运行容器并映射端口 7777
+# 导出镜像
+docker save markets-api > markets-api.tar
+
+# 解压镜像
+docker load < markets-api.tar
+
+# 运行容器并映射端口
 docker run -d -p 7777:7777 --name douyin-app douyin-server
+
+# 进入正在运行的容器
+docker exec -it douyin-app /bin/sh
 ```
 
 ## 🛠️ 注意事项
