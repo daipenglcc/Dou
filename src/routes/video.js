@@ -1,3 +1,4 @@
+const axios = require('axios')
 const Router = require('koa-router')
 const DouyinProcessor = require('../utils/douyinProcessor')
 const fs = require('fs')
@@ -42,7 +43,7 @@ router.post('/parse', async (ctx) => {
 	}
 })
 
-// 下载接口（返回 JSON + 文件路径）
+// 下载接口
 router.post('/download', async (ctx) => {
 	const { shareLink, shareText } = ctx.request.body
 	if (!shareLink && !shareText) {
@@ -58,15 +59,18 @@ router.post('/download', async (ctx) => {
 
 	try {
 		const videoInfo = await processor.parseShareUrl(shareLink || shareText)
-		const filepath = await processor.downloadVideo(videoInfo)
+		// const filepath = await processor.downloadVideo(videoInfo)
 
 		ctx.body = {
 			success: true,
 			message: '下载成功',
-			file: filepath,
+			// file: filepath,
 			videoInfo,
 			timestamp: new Date().toISOString()
 		}
+
+		// 流式下载到客户端
+		// await streamVideoToClient(ctx, videoInfo.url, videoInfo.title)
 	} catch (error) {
 		ctx.status = 500
 		ctx.body = {
@@ -77,45 +81,28 @@ router.post('/download', async (ctx) => {
 	}
 })
 
-// 新增接口：直接返回视频文件流
-router.post('/download/stream', async (ctx) => {
-	const { shareLink, shareText } = ctx.request.body
-	if (!shareLink && !shareText) {
-		ctx.status = 400
-		ctx.body = {
-			success: false,
-			error: '请提供 shareLink 或 shareText 参数'
-		}
-		return
-	}
+/**
+ * 将视频流直接传给客户端
+ * @param {Object} ctx Koa ctx
+ * @param {String} videoUrl 视频下载地址
+ * @param {String} title 视频标题
+ */
+async function streamVideoToClient(ctx, videoUrl, title) {
+	// 处理文件名：去掉非法字符
+	const safeTitle = title.replace(/[/\\?%*:|"<>]/g, '_')
 
-	const processor = new DouyinProcessor()
+	// 获取视频流
+	const response = await axios.get(videoUrl, { responseType: 'stream' })
 
-	try {
-		const videoInfo = await processor.parseShareUrl(shareLink || shareText)
-		const filepath = await processor.downloadVideo(videoInfo)
+	// 设置下载头，支持中文
+	ctx.set(
+		'Content-Disposition',
+		`attachment; filename*=UTF-8''${encodeURIComponent(safeTitle)}.mp4`
+	)
+	ctx.set('Content-Type', 'video/mp4')
 
-		ctx.set('Content-Type', 'video/mp4')
-		ctx.set('Content-Disposition', `attachment; filename="${videoInfo.title}.mp4"`)
-		ctx.body = fs.createReadStream(filepath)
-	} catch (error) {
-		ctx.status = 500
-		ctx.body = {
-			success: false,
-			error: error.message,
-			timestamp: new Date().toISOString()
-		}
-	}
-})
-
-// 健康检查
-router.get('/health', (ctx) => {
-	ctx.body = {
-		success: true,
-		message: '抖音解析服务运行正常',
-		timestamp: new Date().toISOString(),
-		version: '2.1.0'
-	}
-})
+	// 流式传输到客户端
+	ctx.body = response.data
+}
 
 module.exports = router

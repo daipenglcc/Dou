@@ -541,6 +541,17 @@
 
 					if (result.success) {
 						showResult('✅ 下载成功', JSON.stringify(result, null, 2))
+						// 下载视频
+						const downloadInfo = JSON.parse(JSON.stringify(result, null, 2))
+
+						const a = document.createElement('a')
+						a.href = downloadInfo.videoInfo.url
+						a.download = downloadInfo.videoInfo.video_id + '.mp4'
+						document.body.appendChild(a)
+						a.click() // 自动触发下载
+						document.body.removeChild(a) // 下载完成后移除元素
+
+						// window.open(downloadInfo.videoInfo.url, '_blank')
 					} else {
 						showResult('❌ 下载失败', result.message || '下载过程中出现错误', true)
 					}
