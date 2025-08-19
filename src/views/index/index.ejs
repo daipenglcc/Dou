@@ -5,6 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title><%= title %></title>
 		<style>
+			/* 原有样式保持不变，这里仅删掉和下载按钮相关的部分 */
 			* {
 				margin: 0;
 				padding: 0;
@@ -151,17 +152,6 @@
 				box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 			}
 
-			.btn-download {
-				background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-				color: white;
-				box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-			}
-
-			.btn-download:hover:not(:disabled) {
-				transform: translateY(-2px);
-				box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
-			}
-
 			.btn-icon {
 				font-size: 1.2rem;
 			}
@@ -234,7 +224,6 @@
 
 			.tips-list {
 				list-style: none;
-				space-y: 8px;
 			}
 
 			.tips-list li {
@@ -250,6 +239,11 @@
 				content: '💡';
 				flex-shrink: 0;
 				margin-top: 2px;
+			}
+
+			.tips-section {
+				text-align: center;
+				margin-top: 20px;
 			}
 
 			@keyframes fadeInDown {
@@ -293,39 +287,45 @@
 					transform: rotate(360deg);
 				}
 			}
-
-			@media (max-width: 640px) {
-				.container {
-					padding: 0 16px;
-				}
-
-				.main-title {
-					font-size: 1.6rem;
-				}
-
-				.card-content {
-					padding: 30px 24px;
-				}
-
-				.button-group {
-					flex-direction: column;
-				}
-
-				.btn {
-					width: 100%;
-				}
-
-				.logo {
-					font-size: 3rem;
-				}
+		</style>
+		<style>
+			.image-gallery {
+				margin-top: 20px;
+				padding: 20px;
+				background: rgba(255, 255, 255, 0.9);
+				border-radius: 16px;
+				box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+				animation: fadeInUp 0.6s ease-out;
 			}
 
-			.footer {
-				text-align: center;
-				margin-top: 40px;
-				color: rgba(44, 62, 80, 0.6);
-				font-size: 0.9rem;
-				animation: fadeInUp 0.8s ease-out 0.6s both;
+			.gallery-title {
+				font-size: 1.1rem;
+				font-weight: 600;
+				color: #2c3e50;
+				margin-bottom: 16px;
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+
+			.gallery-grid {
+				/* display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+				gap: 12px; */
+			}
+
+			.gallery-grid img {
+				width: 100%;
+				height: auto;
+				border-radius: 12px;
+				box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+				object-fit: cover;
+				transition: transform 0.3s ease;
+				cursor: pointer;
+			}
+
+			.gallery-grid img:hover {
+				transform: scale(1.05);
 			}
 		</style>
 	</head>
@@ -339,7 +339,7 @@
 
 			<div class="main-card">
 				<div class="card-content">
-					<form id="downloadForm">
+					<form id="parseForm">
 						<div class="form-group">
 							<label class="form-label" for="shareText">
 								<span class="icon">📱</span>
@@ -349,7 +349,7 @@
 								id="shareText"
 								class="form-input"
 								rows="4"
-								placeholder="请粘贴完整的抖音分享内容，例如：&#10;&#10;6.64 复制打开抖音，看看【用户名】的作品 标题内容... https://v.douyin.com/xxxxxxx/ 日期 复制码"
+								placeholder="请粘贴完整的抖音分享内容"
 								required
 							></textarea>
 						</div>
@@ -365,16 +365,12 @@
 								<span class="btn-icon" id="parseIcon">🔍</span>
 								<span id="parseText">解析视频</span>
 							</button>
-							<button
-								type="button"
-								class="btn btn-download"
-								id="downloadBtn"
-								onclick="downloadVideo()"
-							>
-								<div class="loading-spinner" id="downloadSpinner"></div>
-								<span class="btn-icon" id="downloadIcon">⬇️</span>
-								<span id="downloadText">下载视频</span>
-							</button>
+						</div>
+
+						<!-- 解析预览区域 -->
+						<div id="imageGallery" class="image-gallery" style="display: none">
+							<div class="gallery-title">🖼️ 解析预览</div>
+							<div class="gallery-grid" id="galleryGrid"></div>
 						</div>
 
 						<div id="result" class="result-area">
@@ -391,15 +387,14 @@
 					使用说明
 				</div>
 				<ul class="tips-list">
-					<li>在抖音 App 中找到想要下载的视频，点击"分享"按钮</li>
-					<li>选择"复制链接"，然后将完整内容粘贴到上方文本框中</li>
-					<li>点击"解析视频"获取视频信息，或直接点击"下载视频"</li>
-					<li>下载的视频将保存到服务器，支持无水印格式</li>
+					<li>在抖音 App 中找到想要的视频，点击"分享"按钮</li>
+					<li>选择"复制链接"，然后将完整内容粘贴到上方文本框</li>
+					<li>点击"解析视频"获取视频信息</li>
 				</ul>
 			</div>
 
 			<div class="footer">
-				<p>© 2024 抖音视频下载器</p>
+				<p>© 2024 抖音视频解析器</p>
 			</div>
 		</div>
 
@@ -443,6 +438,27 @@
 				resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 			}
 
+			// 显示图片方法
+			function showImages(imageUrls = []) {
+				const gallery = document.getElementById('imageGallery')
+				const grid = document.getElementById('galleryGrid')
+				grid.innerHTML = '' // 清空旧内容
+
+				if (imageUrls.length === 0) {
+					gallery.style.display = 'none'
+					return
+				}
+
+				imageUrls.forEach((url) => {
+					const img = document.createElement('img')
+					img.src = url
+					grid.appendChild(img)
+				})
+
+				gallery.style.display = 'block'
+				gallery.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+			}
+
 			// 解析视频函数
 			async function parseVideo() {
 				const shareText = document.getElementById('shareText').value.trim()
@@ -481,6 +497,17 @@
 
 					if (result.success) {
 						showResult('✅ 解析成功', JSON.stringify(result, null, 2))
+						console.log('解析结果:', result)
+
+						if (result.data.aweme_type == 2) {
+							// 显示图片
+							showImages(result.data.allImg)
+						}
+
+						if (result.data.aweme_type == 4) {
+							// 显示封面
+							showImages(result.data.cover)
+						}
 					} else {
 						showResult('❌ 解析失败', result.message || '解析过程中出现错误', true)
 					}
@@ -503,83 +530,9 @@
 				}
 			}
 
-			// 下载视频函数
-			async function downloadVideo() {
-				const shareText = document.getElementById('shareText').value.trim()
-				if (!shareText) {
-					alert('请输入抖音分享内容！')
-					document.getElementById('shareText').focus()
-					return
-				}
-
-				setButtonLoading(
-					'downloadBtn',
-					'downloadSpinner',
-					'downloadIcon',
-					'downloadText',
-					true,
-					'正在下载中...'
-				)
-				showResult('⬇️ 下载状态', '正在处理下载请求，请耐心等待...')
-
-				try {
-					const response = await fetch('/api/download', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-							Accept: 'application/json'
-						},
-						body: `shareText=${encodeURIComponent(shareText)}`
-					})
-
-					if (!response.ok) {
-						const errorText = await response.text()
-						throw new Error(`服务器错误 (${response.status}): ${errorText}`)
-					}
-
-					const result = await response.json()
-
-					if (result.success) {
-						showResult('✅ 下载成功', JSON.stringify(result, null, 2))
-						// 下载视频
-						const downloadInfo = JSON.parse(JSON.stringify(result, null, 2))
-
-						const a = document.createElement('a')
-						a.href = downloadInfo.videoInfo.url
-						a.download = downloadInfo.videoInfo.video_id + '.mp4'
-						document.body.appendChild(a)
-						a.click() // 自动触发下载
-						document.body.removeChild(a) // 下载完成后移除元素
-
-						// window.open(downloadInfo.videoInfo.url, '_blank')
-					} else {
-						showResult('❌ 下载失败', result.message || '下载过程中出现错误', true)
-					}
-				} catch (error) {
-					console.error('Download error:', error)
-					showResult(
-						'❌ 下载失败',
-						`网络请求失败: ${error.message}\n\n请检查网络连接或稍后重试`,
-						true
-					)
-				} finally {
-					setButtonLoading(
-						'downloadBtn',
-						'downloadSpinner',
-						'downloadIcon',
-						'downloadText',
-						false,
-						'下载视频'
-					)
-				}
-			}
-
 			// 页面加载完成后的初始化
 			document.addEventListener('DOMContentLoaded', function () {
-				// 自动聚焦到输入框
 				document.getElementById('shareText').focus()
-
-				// 添加快捷键支持
 				document.addEventListener('keydown', function (e) {
 					if (e.ctrlKey && e.key === 'Enter') {
 						parseVideo()

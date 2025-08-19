@@ -24,9 +24,7 @@ router.post('/parse', async (ctx) => {
 
 	try {
 		const videoInfo = await processor.parseShareUrl(inputText)
-
-		console.log('解析分享链接:', videoInfo)
-
+		// console.log('解析分享链接:', videoInfo)
 		ctx.body = {
 			success: true,
 			data: videoInfo,

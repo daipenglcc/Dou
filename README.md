@@ -114,10 +114,10 @@ node app.js
 docker build -t douyin-server .
 
 # 导出镜像
-docker save markets-api > markets-api.tar
+docker save douyin-server > douyin-server.tar
 
 # 解压镜像
-docker load < markets-api.tar
+docker load < douyin-server.tar
 
 # 运行容器并映射端口
 docker run -d -p 7777:7777 --name douyin-app douyin-server

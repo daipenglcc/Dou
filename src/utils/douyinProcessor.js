@@ -22,8 +22,6 @@ class DouyinProcessor {
 			throw new Error('未找到有效的抖音分享链接')
 		}
 
-		console.log('urls', urls)
-
 		const shareUrl = urls[0]
 		const shareResp = await axios.get(shareUrl, { headers: getRandomUA() })
 		const realUrl = shareResp.request.res.responseUrl
@@ -52,14 +50,16 @@ class DouyinProcessor {
 		}
 
 		const data = originalInfo.item_list[0]
-		let videoUrl, desc
+		const aweme_type = data.aweme_type // 2:图文 4:视频
+		let videoUrl, coverImg, allImg, desc
 
-		if (data.video && data.video.play_addr) {
+		if (aweme_type == 4) {
 			// 普通视频
 			videoUrl = data.video.play_addr.url_list[0].replace('playwm', 'play')
-		} else if (data.images && data.images.length > 0) {
+			coverImg = [data.video.cover.url_list[0].replace('playwm', 'play')]
+		} else if (aweme_type == 2) {
 			// 图文/图集
-			videoUrl = data.images[0].url_list[0]
+			allImg = data.images.map((img) => img.url_list[0].replace('playwm', 'play'))
 		} else {
 			throw new Error('既不是视频也不是图集，无法解析下载地址')
 		}
@@ -68,9 +68,12 @@ class DouyinProcessor {
 		desc = desc.replace(/[\\/:*?"<>|]/g, '_')
 
 		return {
+			aweme_type: aweme_type,
 			video_id: videoId,
 			title: desc,
 			url: videoUrl,
+			cover: coverImg,
+			allImg: allImg,
 			type: data.video ? 'video' : 'image'
 		}
 	}
