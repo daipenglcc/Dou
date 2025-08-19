@@ -1,34 +1,149 @@
-# 抖音视频下载服务
+# Douyin Video Parser & Downloader
 
-## 概述
+一个基于 **Koa** 的抖音视频解析与下载服务，支持：
+- 解析抖音分享链接，获取视频信息
+- 下载视频到本地，并返回路径
+- 直接返回视频文件流供前端下载
+- 健康检查接口
 
-**抖音视频下载服务**是一个强大且高效的服务端应用程序，旨在将抖音（TikTok的中国版本）上的视频无缝下载到本地存储。该服务利用Node.js和Koa的强大功能，提供了一套简洁的API，用于解析和下载视频内容，确保用户体验的流畅和可靠。
+---
 
-## 功能特点
+## 🚀 功能列表
 
-- **便捷的视频解析**：轻松从抖音分享链接中提取视频信息。
-- **本地视频存储**：下载并本地存储视频，使用唯一文件名避免重复。
-- **全面的API接口**：定义良好的端点集，用于处理视频解析、下载和已存储内容的检索。
-- **实时更新**：通过集成`nodemon`和`PM2`，服务支持实时代码更新和进程管理，确保高可用性和最小停机时间。
+### 1. 解析接口
+**POST** `/parse`
 
-## API端点
+- 请求参数：
+```json
+{
+  "shareLink": "https://v.douyin.com/xxxxxxx/"
+}
+````
 
-- **POST `/api/parse`**：解析抖音分享链接以获取视频信息。通过设置`download`参数为`true`，可选择下载视频。
-- **GET `/api/downloads`**：检索所有已下载并本地存储的视频列表，包含文件路径。
-- **GET `/api/test`**：简单的测试端点，用于验证服务是否正常运行。
+或
 
-## 技术规格
+```json
+{
+  "shareText": "快来看看这个视频 https://v.douyin.com/xxxxxxx/"
+}
+```
 
-- **Node.js & Koa**：服务的核心，提供轻量级且可扩展的服务器环境。
-- **PM2进程管理**：确保应用程序在生产环境中平稳运行，具有自动重启和负载均衡功能。
-- **Nodemon用于开发**：通过代码更改自动重启服务器，提供无缝的开发体验。
+* 返回示例：
 
-## 快速开始
+```json
+{
+  "success": true,
+  "data": {
+    "videoId": "123456789",
+    "title": "这是一个示例视频",
+    "author": "某某用户",
+    "videoUrl": "https://example.com/video.mp4"
+  },
+  "message": "解析成功",
+  "timestamp": "2025-08-19T12:00:00.000Z"
+}
+```
 
-1. **安装**：克隆仓库并使用`npm install`安装依赖。
-2. **配置**：确保所有环境变量设置正确，特别是`NODE_ENV`和`PORT`。
-3. **运行服务**：使用`npm run dev`进行开发，支持实时更新；或使用`PM2`通过`pm2 start ecosystem.config.js`进行生产部署。
+---
 
-## 结论
+### 2. 下载接口（返回 JSON + 文件路径）
 
-抖音视频下载服务是一个不可或缺的工具，适合任何希望高效管理和下载抖音视频内容的人。凭借其先进的功能和稳健的架构，它成为现代Web服务设计的典范，提供可靠性和性能。
+**POST** `/download`
+
+* 请求参数同 `/parse`
+
+* 返回示例：
+
+```json
+{
+  "success": true,
+  "message": "下载成功",
+  "file": "/absolute/path/to/video.mp4",
+  "videoInfo": { ... },
+  "timestamp": "2025-08-19T12:05:00.000Z"
+}
+```
+
+---
+
+### 3. 下载接口（返回视频文件流）
+
+**POST** `/download/stream`
+
+* 请求参数同 `/parse`
+
+* 响应头：
+
+```
+Content-Type: video/mp4
+Content-Disposition: attachment; filename="视频标题.mp4"
+```
+
+* 直接触发浏览器下载。
+
+---
+
+### 4. 健康检查
+
+**GET** `/health`
+
+* 返回示例：
+
+```json
+{
+  "success": true,
+  "message": "抖音解析服务运行正常",
+  "timestamp": "2025-08-19T12:10:00.000Z",
+  "version": "2.1.0"
+}
+```
+
+---
+
+## 📦 安装与运行
+
+### 1. 克隆项目
+
+```bash
+git clone https://github.com/yourname/douyin-parser.git
+cd douyin-parser
+```
+
+### 2. 安装依赖
+
+```bash
+npm install
+```
+
+### 3. 启动服务
+
+```bash
+node app.js
+```
+
+默认运行在 `http://localhost:7777`
+
+---
+
+## ⚙️ 目录结构（简化）
+
+```
+project-root/
+│── routes/
+│   └── douyin.js           # 路由接口
+│── utils/
+│   └── douyinProcessor.js  # 核心解析与下载逻辑
+│── app.js                  # Koa 启动入口
+│── package.json
+│── README.md
+```
+
+---
+
+## 🛠️ 注意事项
+
+1. **视频下载**需要保持请求头伪装，建议使用随机 User-Agent（已在 `douyinProcessor` 内部处理）。
+2. 抖音页面结构若有调整，解析逻辑可能需要更新。
+3. 默认视频会下载到项目指定目录，可根据需求修改存储路径。
+
+---

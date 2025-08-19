@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title><%= title %></title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+					'Helvetica Neue', Arial, sans-serif;
+				background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+				min-height: 100vh;
+				color: #333;
+				padding: 20px 0;
+			}
+
+			.container {
+				max-width: 600px;
+				margin: 0 auto;
+				padding: 0 20px;
+			}
+
+			.logo-section {
+				text-align: center;
+				margin-bottom: 40px;
+				animation: fadeInDown 0.8s ease-out;
+			}
+
+			.logo {
+				font-size: 4rem;
+				margin-bottom: 10px;
+				filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+			}
+
+			.main-title {
+				color: #2c3e50;
+				font-size: 2rem;
+				font-weight: 700;
+				margin-bottom: 8px;
+				text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+			.subtitle {
+				color: #7f8c8d;
+				font-size: 1.1rem;
+				font-weight: 400;
+			}
+
+			.main-card {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(10px);
+				border-radius: 24px;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				overflow: hidden;
+				animation: fadeInUp 0.8s ease-out 0.2s both;
+			}
+
+			.card-content {
+				padding: 40px 30px;
+			}
+
+			.form-group {
+				margin-bottom: 30px;
+			}
+
+			.form-label {
+				display: flex;
+				align-items: center;
+				margin-bottom: 12px;
+				font-weight: 600;
+				color: #34495e;
+				font-size: 1.1rem;
+			}
+
+			.form-label .icon {
+				margin-right: 8px;
+				font-size: 1.2rem;
+			}
+
+			.form-input {
+				width: 100%;
+				padding: 16px 20px;
+				border: 2px solid #e8f0fe;
+				border-radius: 16px;
+				font-size: 1rem;
+				line-height: 1.5;
+				transition: all 0.3s ease;
+				resize: vertical;
+				min-height: 120px;
+				font-family: inherit;
+				background: #fafbfc;
+			}
+
+			.form-input:focus {
+				outline: none;
+				border-color: #4285f4;
+				background: white;
+				box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.1);
+				transform: translateY(-1px);
+			}
+
+			.form-input::placeholder {
+				color: #9aa0a6;
+				font-size: 0.95rem;
+			}
+
+			.button-group {
+				display: flex;
+				gap: 16px;
+				margin-top: 30px;
+			}
+
+			.btn {
+				flex: 1;
+				padding: 16px 24px;
+				border: none;
+				border-radius: 16px;
+				font-size: 1.1rem;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				text-decoration: none;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 8px;
+				position: relative;
+				overflow: hidden;
+			}
+
+			.btn:disabled {
+				opacity: 0.6;
+				cursor: not-allowed;
+			}
+
+			.btn-parse {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+			}
+
+			.btn-parse:hover:not(:disabled) {
+				transform: translateY(-2px);
+				box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+			}
+
+			.btn-download {
+				background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+				color: white;
+				box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+			}
+
+			.btn-download:hover:not(:disabled) {
+				transform: translateY(-2px);
+				box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+			}
+
+			.btn-icon {
+				font-size: 1.2rem;
+			}
+
+			.loading-spinner {
+				width: 20px;
+				height: 20px;
+				border: 2px solid rgba(255, 255, 255, 0.3);
+				border-top: 2px solid white;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				display: none;
+			}
+
+			.result-area {
+				margin-top: 30px;
+				padding: 24px;
+				background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+				border-radius: 16px;
+				border-left: 4px solid #28a745;
+				display: none;
+				animation: slideInUp 0.5s ease-out;
+			}
+
+			.result-area.error {
+				border-left-color: #dc3545;
+				background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+			}
+
+			.result-title {
+				font-weight: 600;
+				margin-bottom: 12px;
+				color: #2c3e50;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.result-content {
+				font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+				font-size: 0.9rem;
+				line-height: 1.6;
+				color: #495057;
+				white-space: pre-wrap;
+				word-break: break-word;
+				background: rgba(255, 255, 255, 0.7);
+				padding: 16px;
+				border-radius: 8px;
+				border: 1px solid rgba(0, 0, 0, 0.1);
+			}
+
+			.tips-section {
+				margin-top: 40px;
+				padding: 24px;
+				background: rgba(255, 255, 255, 0.8);
+				border-radius: 16px;
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				animation: fadeInUp 0.8s ease-out 0.4s both;
+			}
+
+			.tips-title {
+				font-size: 1.1rem;
+				font-weight: 600;
+				color: #2c3e50;
+				margin-bottom: 16px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.tips-list {
+				list-style: none;
+				space-y: 8px;
+			}
+
+			.tips-list li {
+				color: #5a6c7d;
+				line-height: 1.6;
+				margin-bottom: 8px;
+				display: flex;
+				align-items: flex-start;
+				gap: 8px;
+			}
+
+			.tips-list li::before {
+				content: '💡';
+				flex-shrink: 0;
+				margin-top: 2px;
+			}
+
+			@keyframes fadeInDown {
+				from {
+					opacity: 0;
+					transform: translateY(-20px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			@keyframes fadeInUp {
+				from {
+					opacity: 0;
+					transform: translateY(20px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			@keyframes slideInUp {
+				from {
+					opacity: 0;
+					transform: translateY(10px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			@media (max-width: 640px) {
+				.container {
+					padding: 0 16px;
+				}
+
+				.main-title {
+					font-size: 1.6rem;
+				}
+
+				.card-content {
+					padding: 30px 24px;
+				}
+
+				.button-group {
+					flex-direction: column;
+				}
+
+				.btn {
+					width: 100%;
+				}
+
+				.logo {
+					font-size: 3rem;
+				}
+			}
+
+			.footer {
+				text-align: center;
+				margin-top: 40px;
+				color: rgba(44, 62, 80, 0.6);
+				font-size: 0.9rem;
+				animation: fadeInUp 0.8s ease-out 0.6s both;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="logo-section">
+				<div class="logo">🎵</div>
+				<h1 class="main-title">抖音视频下载器</h1>
+				<p class="subtitle">快速解析并下载抖音视频，支持无水印下载</p>
+			</div>
+
+			<div class="main-card">
+				<div class="card-content">
+					<form id="downloadForm">
+						<div class="form-group">
+							<label class="form-label" for="shareText">
+								<span class="icon">📱</span>
+								抖音分享内容
+							</label>
+							<textarea
+								id="shareText"
+								class="form-input"
+								rows="4"
+								placeholder="请粘贴完整的抖音分享内容，例如：&#10;&#10;6.64 复制打开抖音，看看【用户名】的作品 标题内容... https://v.douyin.com/xxxxxxx/ 日期 复制码"
+								required
+							></textarea>
+						</div>
+
+						<div class="button-group">
+							<button
+								type="button"
+								class="btn btn-parse"
+								id="parseBtn"
+								onclick="parseVideo()"
+							>
+								<div class="loading-spinner" id="parseSpinner"></div>
+								<span class="btn-icon" id="parseIcon">🔍</span>
+								<span id="parseText">解析视频</span>
+							</button>
+							<button
+								type="button"
+								class="btn btn-download"
+								id="downloadBtn"
+								onclick="downloadVideo()"
+							>
+								<div class="loading-spinner" id="downloadSpinner"></div>
+								<span class="btn-icon" id="downloadIcon">⬇️</span>
+								<span id="downloadText">下载视频</span>
+							</button>
+						</div>
+
+						<div id="result" class="result-area">
+							<div class="result-title" id="resultTitle">📋 处理结果</div>
+							<div class="result-content" id="resultContent"></div>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<div class="tips-section">
+				<div class="tips-title">
+					<span>💡</span>
+					使用说明
+				</div>
+				<ul class="tips-list">
+					<li>在抖音 App 中找到想要下载的视频，点击"分享"按钮</li>
+					<li>选择"复制链接"，然后将完整内容粘贴到上方文本框中</li>
+					<li>点击"解析视频"获取视频信息，或直接点击"下载视频"</li>
+					<li>下载的视频将保存到服务器，支持无水印格式</li>
+				</ul>
+			</div>
+
+			<div class="footer">
+				<p>© 2024 抖音视频下载器</p>
+			</div>
+		</div>
+
+		<script>
+			// 设置按钮加载状态
+			function setButtonLoading(buttonId, spinnerId, iconId, textId, loading, loadingText) {
+				const button = document.getElementById(buttonId)
+				const spinner = document.getElementById(spinnerId)
+				const icon = document.getElementById(iconId)
+				const text = document.getElementById(textId)
+
+				if (loading) {
+					button.disabled = true
+					spinner.style.display = 'block'
+					icon.style.display = 'none'
+					text.textContent = loadingText
+				} else {
+					button.disabled = false
+					spinner.style.display = 'none'
+					icon.style.display = 'block'
+					text.textContent = loadingText.replace('中...', '').replace('正在', '')
+				}
+			}
+
+			// 显示结果
+			function showResult(title, content, isError = false) {
+				const resultArea = document.getElementById('result')
+				const resultTitle = document.getElementById('resultTitle')
+				const resultContent = document.getElementById('resultContent')
+
+				resultTitle.innerHTML = title
+				resultContent.textContent = content
+
+				if (isError) {
+					resultArea.classList.add('error')
+				} else {
+					resultArea.classList.remove('error')
+				}
+
+				resultArea.style.display = 'block'
+				resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+			}
+
+			// 解析视频函数
+			async function parseVideo() {
+				const shareText = document.getElementById('shareText').value.trim()
+				if (!shareText) {
+					alert('请输入抖音分享内容！')
+					document.getElementById('shareText').focus()
+					return
+				}
+
+				setButtonLoading(
+					'parseBtn',
+					'parseSpinner',
+					'parseIcon',
+					'parseText',
+					true,
+					'正在解析中...'
+				)
+				showResult('🔄 解析状态', '正在解析视频信息，请稍候...')
+
+				try {
+					const response = await fetch('/api/parse', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/x-www-form-urlencoded',
+							Accept: 'application/json'
+						},
+						body: `shareText=${encodeURIComponent(shareText)}`
+					})
+
+					if (!response.ok) {
+						const errorText = await response.text()
+						throw new Error(`服务器错误 (${response.status}): ${errorText}`)
+					}
+
+					const result = await response.json()
+
+					if (result.success) {
+						showResult('✅ 解析成功', JSON.stringify(result, null, 2))
+					} else {
+						showResult('❌ 解析失败', result.message || '解析过程中出现错误', true)
+					}
+				} catch (error) {
+					console.error('Parse error:', error)
+					showResult(
+						'❌ 解析失败',
+						`网络请求失败: ${error.message}\n\n请检查网络连接或稍后重试`,
+						true
+					)
+				} finally {
+					setButtonLoading(
+						'parseBtn',
+						'parseSpinner',
+						'parseIcon',
+						'parseText',
+						false,
+						'解析视频'
+					)
+				}
+			}
+
+			// 下载视频函数
+			async function downloadVideo() {
+				const shareText = document.getElementById('shareText').value.trim()
+				if (!shareText) {
+					alert('请输入抖音分享内容！')
+					document.getElementById('shareText').focus()
+					return
+				}
+
+				setButtonLoading(
+					'downloadBtn',
+					'downloadSpinner',
+					'downloadIcon',
+					'downloadText',
+					true,
+					'正在下载中...'
+				)
+				showResult('⬇️ 下载状态', '正在处理下载请求，请耐心等待...')
+
+				try {
+					const response = await fetch('/api/download', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/x-www-form-urlencoded',
+							Accept: 'application/json'
+						},
+						body: `shareText=${encodeURIComponent(shareText)}`
+					})
+
+					if (!response.ok) {
+						const errorText = await response.text()
+						throw new Error(`服务器错误 (${response.status}): ${errorText}`)
+					}
+
+					const result = await response.json()
+
+					if (result.success) {
+						showResult('✅ 下载成功', JSON.stringify(result, null, 2))
+					} else {
+						showResult('❌ 下载失败', result.message || '下载过程中出现错误', true)
+					}
+				} catch (error) {
+					console.error('Download error:', error)
+					showResult(
+						'❌ 下载失败',
+						`网络请求失败: ${error.message}\n\n请检查网络连接或稍后重试`,
+						true
+					)
+				} finally {
+					setButtonLoading(
+						'downloadBtn',
+						'downloadSpinner',
+						'downloadIcon',
+						'downloadText',
+						false,
+						'下载视频'
+					)
+				}
+			}
+
+			// 页面加载完成后的初始化
+			document.addEventListener('DOMContentLoaded', function () {
+				// 自动聚焦到输入框
+				document.getElementById('shareText').focus()
+
+				// 添加快捷键支持
+				document.addEventListener('keydown', function (e) {
+					if (e.ctrlKey && e.key === 'Enter') {
+						parseVideo()
+					}
+				})
+			})
+		</script>
+	</body>
+</html>
