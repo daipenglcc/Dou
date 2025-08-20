@@ -74,7 +74,7 @@
 
 			.input {
 				width: 100%;
-				padding: 15px 20px;
+				padding: 8px 10px;
 				border: 2px solid rgba(255, 255, 255, 0.2);
 				border-radius: 15px;
 				background: rgba(255, 255, 255, 0.1);
@@ -175,6 +175,7 @@
 				border-radius: 15px;
 				padding: 20px;
 				margin-bottom: 20px;
+				user-select: none;
 			}
 
 			.video-container {
@@ -216,12 +217,6 @@
 			.image-item {
 				border-radius: 10px;
 				overflow: hidden;
-				transition: transform 0.3s ease;
-				cursor: pointer;
-			}
-
-			.image-item:hover {
-				transform: scale(1.05);
 			}
 
 			.image-item img {
@@ -398,7 +393,6 @@
 											v-for="(image, index) in imageData"
 											:key="index"
 											class="image-item"
-											@click="previewImage(image)"
 										>
 											<img
 												:src="image"
@@ -408,7 +402,7 @@
 										</div>
 									</div>
 									<div style="opacity: 0.7; font-size: 0.9rem">
-										💡 点击图片预览，右键保存到本地
+										💡 长按图片保存到本地
 									</div>
 								</div>
 							</div>
@@ -439,7 +433,7 @@
 						<li>在抖音APP中找到视频，点击分享按钮</li>
 						<li>选择"复制链接"，粘贴到上方输入框</li>
 						<li>点击解析按钮，查看作品信息和预览</li>
-						<li>视频可一键下载，图片可右键保存</li>
+						<li>视频可一键下载，图片可长按保存</li>
 					</ul>
 				</div>
 			</div>
@@ -460,15 +454,6 @@
 					const imageData = ref([])
 					const infoData = ref(null)
 					const textareaRef = ref(null)
-
-					// 格式化数字
-					const formatCount = (count) => {
-						if (!count) return '0'
-						if (count >= 10000) {
-							return (count / 10000).toFixed(1) + 'w'
-						}
-						return count.toString()
-					}
 
 					// 清理结果
 					const clearResults = () => {
@@ -508,15 +493,18 @@
 						scrollToResults()
 					}
 
-					// 预览图片
-					const previewImage = (imageUrl) => {
-						window.open(imageUrl, '_blank')
-					}
-
 					// 下载视频
 					const downloadVideo = () => {
+						// if (videoData.value?.downloadUrl) {
+						// 	window.open(videoData.value.downloadUrl, '_blank')
+						// }
 						if (videoData.value?.downloadUrl) {
-							window.open(videoData.value.downloadUrl, '_blank')
+							const a = document.createElement('a')
+							a.href = videoData.value.downloadUrl
+							a.download = (videoData.value.title || 'video') + '.mp4' // 指定下载文件名
+							document.body.appendChild(a)
+							a.click()
+							document.body.removeChild(a)
 						}
 					}
 
@@ -608,10 +596,8 @@
 						imageData,
 						infoData,
 						textareaRef,
-						formatCount,
 						parseVideo,
-						downloadVideo,
-						previewImage
+						downloadVideo
 					}
 				}
 			}).mount('#app')
