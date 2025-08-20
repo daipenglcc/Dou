@@ -1,9 +1,10 @@
-# Douyin Video Parser & Downloader
+# 🎬 Douyin Video Parser & Downloader
 
-一个基于 **Koa2** 的抖音视频解析与下载服务，支持：
-- 解析抖音分享链接，获取视频信息
-- 下载视频到本地，并返回路径
-- 直接返回视频文件流供前端下载
+一个基于 **Koa2** 的抖音视频解析与下载服务，支持以下功能：
+
+- 🔗 **解析抖音分享链接**：提取视频信息（视频 ID、标题、作者、播放地址等）  
+- 💾 **下载视频至本地**：返回存储路径  
+- 📥 **视频文件流输出**：前端可直接下载  
 
 ---
 
@@ -65,30 +66,13 @@
 
 ---
 
-### 3. 下载接口（返回视频文件流）
-
-**POST** `/download/stream`
-
-* 请求参数同 `/parse`
-
-* 响应头：
-
-```
-Content-Type: video/mp4
-Content-Disposition: attachment; filename="视频标题.mp4"
-```
-
-* 直接触发浏览器下载。
-
----
-
 ## 📦 安装与运行
 
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/yourname/douyin-parser.git
-cd douyin-parser
+git clone https://github.com/daipenglcc/Dou.git
+cd Dou
 ```
 
 ### 2. 安装依赖

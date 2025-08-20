@@ -3,9 +3,8 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title><%= title %></title>
+		<title>抖音视频下载器</title>
 		<style>
-			/* 原有样式保持不变，这里仅删掉和下载按钮相关的部分 */
 			* {
 				margin: 0;
 				padding: 0;
@@ -13,270 +12,137 @@
 			}
 
 			body {
-				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-					'Helvetica Neue', Arial, sans-serif;
-				background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+				background: linear-gradient(135deg, #667eea, #764ba2);
 				min-height: 100vh;
 				color: #333;
-				padding: 20px 0;
+				padding: 20px;
 			}
 
 			.container {
-				max-width: 600px;
+				max-width: 800px;
 				margin: 0 auto;
-				padding: 0 20px;
 			}
 
-			.logo-section {
+			/* 头部样式 */
+			.header {
 				text-align: center;
 				margin-bottom: 40px;
-				animation: fadeInDown 0.8s ease-out;
+				color: white;
 			}
 
 			.logo {
-				font-size: 4rem;
-				margin-bottom: 10px;
-				filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+				font-size: 3rem;
+				margin-bottom: 15px;
 			}
 
-			.main-title {
-				color: #2c3e50;
-				font-size: 2rem;
+			.title {
+				font-size: 2.5rem;
 				font-weight: 700;
-				margin-bottom: 8px;
-				text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+				margin-bottom: 10px;
 			}
 
 			.subtitle {
-				color: #7f8c8d;
+				opacity: 0.8;
 				font-size: 1.1rem;
-				font-weight: 400;
 			}
 
-			.main-card {
-				background: rgba(255, 255, 255, 0.95);
-				backdrop-filter: blur(10px);
-				border-radius: 24px;
-				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+			/* 卡片样式 */
+			.card {
+				background: rgba(255, 255, 255, 0.15);
+				backdrop-filter: blur(20px);
+				border-radius: 20px;
 				border: 1px solid rgba(255, 255, 255, 0.2);
-				overflow: hidden;
-				animation: fadeInUp 0.8s ease-out 0.2s both;
-			}
-
-			.card-content {
-				padding: 40px 30px;
-			}
-
-			.form-group {
+				padding: 30px;
 				margin-bottom: 30px;
+				box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 			}
 
-			.form-label {
+			/* 表单样式 */
+			.form-group {
+				margin-bottom: 25px;
+			}
+
+			.label {
+				color: rgba(255, 255, 255, 0.9);
+				font-weight: 600;
+				margin-bottom: 10px;
 				display: flex;
 				align-items: center;
-				margin-bottom: 12px;
-				font-weight: 600;
-				color: #34495e;
-				font-size: 1.1rem;
+				gap: 8px;
 			}
 
-			.form-label .icon {
-				margin-right: 8px;
-				font-size: 1.2rem;
-			}
-
-			.form-input {
+			.input {
 				width: 100%;
-				padding: 16px 20px;
-				border: 2px solid #e8f0fe;
-				border-radius: 16px;
+				padding: 15px 20px;
+				border: 2px solid rgba(255, 255, 255, 0.2);
+				border-radius: 15px;
+				background: rgba(255, 255, 255, 0.1);
+				color: white;
 				font-size: 1rem;
-				line-height: 1.5;
 				transition: all 0.3s ease;
-				resize: vertical;
 				min-height: 120px;
-				font-family: inherit;
-				background: #fafbfc;
+				resize: vertical;
 			}
 
-			.form-input:focus {
+			.input:focus {
 				outline: none;
-				border-color: #4285f4;
-				background: white;
-				box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.1);
-				transform: translateY(-1px);
+				border-color: rgba(255, 255, 255, 0.5);
+				background: rgba(255, 255, 255, 0.15);
 			}
 
-			.form-input::placeholder {
-				color: #9aa0a6;
-				font-size: 0.95rem;
+			.input::placeholder {
+				color: rgba(255, 255, 255, 0.5);
 			}
 
-			.button-group {
-				display: flex;
-				gap: 16px;
-				margin-top: 30px;
-			}
-
+			/* 按钮样式 */
 			.btn {
-				flex: 1;
-				padding: 16px 24px;
+				width: 100%;
+				padding: 15px;
 				border: none;
-				border-radius: 16px;
+				border-radius: 15px;
 				font-size: 1.1rem;
 				font-weight: 600;
 				cursor: pointer;
 				transition: all 0.3s ease;
-				text-decoration: none;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				gap: 8px;
-				position: relative;
-				overflow: hidden;
+				gap: 10px;
+			}
+
+			.btn-primary {
+				background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+				color: white;
+			}
+
+			.btn-primary:hover:not(:disabled) {
+				transform: translateY(-2px);
+				box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+			}
+
+			.btn-success {
+				background: linear-gradient(135deg, #10ac84, #00d2d3);
+				color: white;
+			}
+
+			.btn-success:hover {
+				transform: translateY(-2px);
 			}
 
 			.btn:disabled {
-				opacity: 0.6;
+				opacity: 0.7;
 				cursor: not-allowed;
 			}
 
-			.btn-parse {
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				color: white;
-				box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-			}
-
-			.btn-parse:hover:not(:disabled) {
-				transform: translateY(-2px);
-				box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-			}
-
-			.btn-icon {
-				font-size: 1.2rem;
-			}
-
-			.loading-spinner {
+			/* 加载动画 */
+			.spinner {
 				width: 20px;
 				height: 20px;
 				border: 2px solid rgba(255, 255, 255, 0.3);
 				border-top: 2px solid white;
 				border-radius: 50%;
 				animation: spin 1s linear infinite;
-				display: none;
-			}
-
-			.result-area {
-				margin-top: 30px;
-				padding: 24px;
-				background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-				border-radius: 16px;
-				border-left: 4px solid #28a745;
-				display: none;
-				animation: slideInUp 0.5s ease-out;
-			}
-
-			.result-area.error {
-				border-left-color: #dc3545;
-				background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
-			}
-
-			.result-title {
-				font-weight: 600;
-				margin-bottom: 12px;
-				color: #2c3e50;
-				display: flex;
-				align-items: center;
-				gap: 8px;
-			}
-
-			.result-content {
-				font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
-				font-size: 0.9rem;
-				line-height: 1.6;
-				color: #495057;
-				white-space: pre-wrap;
-				word-break: break-word;
-				background: rgba(255, 255, 255, 0.7);
-				padding: 16px;
-				border-radius: 8px;
-				border: 1px solid rgba(0, 0, 0, 0.1);
-			}
-
-			.tips-section {
-				margin-top: 40px;
-				padding: 24px;
-				background: rgba(255, 255, 255, 0.8);
-				border-radius: 16px;
-				border: 1px solid rgba(255, 255, 255, 0.3);
-				animation: fadeInUp 0.8s ease-out 0.4s both;
-			}
-
-			.tips-title {
-				font-size: 1.1rem;
-				font-weight: 600;
-				color: #2c3e50;
-				margin-bottom: 16px;
-				display: flex;
-				align-items: center;
-				gap: 8px;
-			}
-
-			.tips-list {
-				list-style: none;
-			}
-
-			.tips-list li {
-				color: #5a6c7d;
-				line-height: 1.6;
-				margin-bottom: 8px;
-				display: flex;
-				align-items: flex-start;
-				gap: 8px;
-			}
-
-			.tips-list li::before {
-				content: '💡';
-				flex-shrink: 0;
-				margin-top: 2px;
-			}
-
-			.tips-section {
-				text-align: center;
-				margin-top: 20px;
-			}
-
-			@keyframes fadeInDown {
-				from {
-					opacity: 0;
-					transform: translateY(-20px);
-				}
-				to {
-					opacity: 1;
-					transform: translateY(0);
-				}
-			}
-
-			@keyframes fadeInUp {
-				from {
-					opacity: 0;
-					transform: translateY(20px);
-				}
-				to {
-					opacity: 1;
-					transform: translateY(0);
-				}
-			}
-
-			@keyframes slideInUp {
-				from {
-					opacity: 0;
-					transform: translateY(10px);
-				}
-				to {
-					opacity: 1;
-					transform: translateY(0);
-				}
 			}
 
 			@keyframes spin {
@@ -287,258 +153,468 @@
 					transform: rotate(360deg);
 				}
 			}
-		</style>
-		<style>
-			.image-gallery {
-				margin-top: 20px;
-				padding: 20px;
-				background: rgba(255, 255, 255, 0.9);
-				border-radius: 16px;
-				box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-				animation: fadeInUp 0.6s ease-out;
+
+			/* 结果展示区域 */
+			.results {
+				margin-top: 30px;
 			}
 
-			.gallery-title {
-				font-size: 1.1rem;
+			.result-header {
+				color: white;
 				font-weight: 600;
-				color: #2c3e50;
-				margin-bottom: 16px;
+				font-size: 1.2rem;
+				margin-bottom: 20px;
 				display: flex;
 				align-items: center;
-				gap: 6px;
+				gap: 10px;
 			}
 
-			.gallery-grid {
-				/* display: grid;
-				grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-				gap: 12px; */
+			/* 媒体预览样式 */
+			.media-preview {
+				background: rgba(255, 255, 255, 0.05);
+				border-radius: 15px;
+				padding: 20px;
+				margin-bottom: 20px;
 			}
 
-			.gallery-grid img {
+			.video-container {
+				position: relative;
+				border-radius: 15px;
+				overflow: hidden;
+				margin-bottom: 20px;
+			}
+
+			.video-cover {
 				width: 100%;
-				height: auto;
-				border-radius: 12px;
-				box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+				height: 300px;
 				object-fit: cover;
+			}
+
+			.play-btn {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 60px;
+				height: 60px;
+				background: rgba(255, 255, 255, 0.9);
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 1.5rem;
+			}
+
+			/* 图片网格 */
+			.image-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 15px;
+				margin-bottom: 20px;
+			}
+
+			.image-item {
+				border-radius: 10px;
+				overflow: hidden;
 				transition: transform 0.3s ease;
 				cursor: pointer;
 			}
 
-			.gallery-grid img:hover {
+			.image-item:hover {
 				transform: scale(1.05);
+			}
+
+			.image-item img {
+				width: 100%;
+				height: auto;
+				display: block;
+			}
+
+			/* 信息展示 */
+			.info-display {
+				background: rgba(255, 255, 255, 0.1);
+				border-radius: 15px;
+				padding: 20px;
+				color: white;
+				white-space: pre-wrap;
+				font-family: monospace;
+				font-size: 0.9rem;
+				line-height: 1.4;
+				max-height: 300px;
+				overflow-y: auto;
+			}
+
+			.error {
+				background: rgba(255, 107, 107, 0.2);
+				border: 1px solid rgba(255, 107, 107, 0.3);
+				color: #ffcccb;
+			}
+
+			/* 使用说明 */
+			.tips {
+				background: rgba(255, 255, 255, 0.1);
+				border-radius: 20px;
+				padding: 30px;
+				color: white;
+			}
+
+			.tips h3 {
+				margin-bottom: 15px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.tips ul {
+				list-style: none;
+			}
+
+			.tips li {
+				margin-bottom: 10px;
+				display: flex;
+				align-items: flex-start;
+				gap: 10px;
+				line-height: 1.5;
+			}
+
+			.tips li::before {
+				content: '✨';
+				flex-shrink: 0;
+			}
+
+			/* 响应式 */
+			@media (max-width: 768px) {
+				.title {
+					font-size: 2rem;
+				}
+
+				.card {
+					padding: 20px;
+				}
+
+				.work-meta {
+					grid-template-columns: repeat(2, 1fr);
+				}
+			}
+
+			/* Vue过渡 */
+			.fade-enter-active,
+			.fade-leave-active {
+				transition: opacity 0.5s ease;
+			}
+
+			.fade-enter-from,
+			.fade-leave-to {
+				opacity: 0;
+			}
+
+			.slide-enter-active {
+				transition: all 0.4s ease-out;
+			}
+
+			.slide-enter-from {
+				opacity: 0;
+				transform: translateY(20px);
 			}
 		</style>
 	</head>
 	<body>
-		<div class="container">
-			<div class="logo-section">
-				<div class="logo">🎵</div>
-				<h1 class="main-title">抖音视频下载器</h1>
-				<p class="subtitle">快速解析并下载抖音视频，支持无水印下载</p>
-			</div>
+		<div id="app">
+			<div class="container">
+				<!-- 头部 -->
+				<div class="header">
+					<div class="logo">🎵</div>
+					<h1 class="title">抖音视频下载器</h1>
+					<p class="subtitle">快速解析并下载抖音视频，支持无水印下载</p>
+				</div>
 
-			<div class="main-card">
-				<div class="card-content">
-					<form id="parseForm">
+				<!-- 主要表单 -->
+				<div class="card">
+					<form @submit.prevent="parseVideo">
 						<div class="form-group">
-							<label class="form-label" for="shareText">
-								<span class="icon">📱</span>
-								抖音分享内容
+							<label class="label">
+								<span>📱</span>
+								输入抖音分享链接
 							</label>
 							<textarea
-								id="shareText"
-								class="form-input"
-								rows="4"
-								placeholder="请粘贴完整的抖音分享内容"
+								v-model="shareText"
+								class="input"
+								placeholder="请粘贴完整的抖音分享内容或链接..."
 								required
+								ref="textareaRef"
 							></textarea>
 						</div>
 
-						<div class="button-group">
-							<button
-								type="button"
-								class="btn btn-parse"
-								id="parseBtn"
-								onclick="parseVideo()"
-							>
-								<div class="loading-spinner" id="parseSpinner"></div>
-								<span class="btn-icon" id="parseIcon">🔍</span>
-								<span id="parseText">解析视频</span>
-							</button>
-						</div>
-
-						<!-- 解析预览区域 -->
-						<div id="imageGallery" class="image-gallery" style="display: none">
-							<div class="gallery-title">🖼️ 解析预览</div>
-							<div class="gallery-grid" id="galleryGrid"></div>
-						</div>
-
-						<div id="result" class="result-area">
-							<div class="result-title" id="resultTitle">📋 处理结果</div>
-							<div class="result-content" id="resultContent"></div>
-						</div>
+						<button
+							type="button"
+							class="btn btn-primary"
+							@click="parseVideo"
+							:disabled="isLoading"
+						>
+							<div v-show="isLoading" class="spinner"></div>
+							<span v-show="!isLoading">🔍</span>
+							<span>{{ isLoading ? '正在解析...' : '解析视频' }}</span>
+						</button>
 					</form>
 				</div>
-			</div>
 
-			<div class="tips-section">
-				<div class="tips-title">
-					<span>💡</span>
-					使用说明
+				<!-- 解析结果 -->
+				<transition name="slide">
+					<div v-show="showResults" class="results">
+						<!-- 视频预览 -->
+						<transition name="fade">
+							<div v-show="videoData" class="card">
+								<div class="result-header">
+									<span>🎬</span>
+									视频预览
+								</div>
+								<div class="media-preview">
+									<div class="video-container">
+										<img
+											:src="videoData?.coverUrl"
+											class="video-cover"
+											alt="视频封面"
+										/>
+										<div class="play-btn">▶️</div>
+									</div>
+									<button class="btn btn-success" @click="downloadVideo">
+										<span>📥</span>
+										下载视频
+									</button>
+								</div>
+							</div>
+						</transition>
+
+						<!-- 图片预览 -->
+						<transition name="fade">
+							<div v-show="imageData && imageData.length > 0" class="card">
+								<div class="result-header">
+									<span>🖼️</span>
+									图片预览 ({{ imageData.length }}张)
+								</div>
+								<div class="media-preview">
+									<div class="image-grid">
+										<div
+											v-for="(image, index) in imageData"
+											:key="index"
+											class="image-item"
+											@click="previewImage(image)"
+										>
+											<img
+												:src="image"
+												:alt="`图片 ${index + 1}`"
+												loading="lazy"
+											/>
+										</div>
+									</div>
+									<div style="opacity: 0.7; font-size: 0.9rem">
+										💡 点击图片预览，右键保存到本地
+									</div>
+								</div>
+							</div>
+						</transition>
+
+						<!-- 详细信息 -->
+						<transition name="fade">
+							<div v-show="infoData" class="card">
+								<div class="result-header">
+									<span>{{ infoData?.isError ? '❌' : '📋' }}</span>
+									<span>{{ infoData?.title || '详细信息' }}</span>
+								</div>
+								<div class="info-display" :class="{ 'error': infoData?.isError }">
+									{{ infoData?.content }}
+								</div>
+							</div>
+						</transition>
+					</div>
+				</transition>
+
+				<!-- 使用说明 -->
+				<div class="card tips">
+					<h3>
+						<span>💡</span>
+						使用说明
+					</h3>
+					<ul>
+						<li>在抖音APP中找到视频，点击分享按钮</li>
+						<li>选择"复制链接"，粘贴到上方输入框</li>
+						<li>点击解析按钮，查看作品信息和预览</li>
+						<li>视频可一键下载，图片可右键保存</li>
+					</ul>
 				</div>
-				<ul class="tips-list">
-					<li>在抖音 App 中找到想要的视频，点击"分享"按钮</li>
-					<li>选择"复制链接"，然后将完整内容粘贴到上方文本框</li>
-					<li>点击"解析视频"获取视频信息</li>
-				</ul>
-			</div>
-
-			<div class="footer">
-				<p>© 2024 抖音视频解析器</p>
 			</div>
 		</div>
 
+		<!-- Vue 3 CDN -->
+		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 		<script>
-			// 设置按钮加载状态
-			function setButtonLoading(buttonId, spinnerId, iconId, textId, loading, loadingText) {
-				const button = document.getElementById(buttonId)
-				const spinner = document.getElementById(spinnerId)
-				const icon = document.getElementById(iconId)
-				const text = document.getElementById(textId)
+			const { createApp, ref, onMounted, nextTick } = Vue
 
-				if (loading) {
-					button.disabled = true
-					spinner.style.display = 'block'
-					icon.style.display = 'none'
-					text.textContent = loadingText
-				} else {
-					button.disabled = false
-					spinner.style.display = 'none'
-					icon.style.display = 'block'
-					text.textContent = loadingText.replace('中...', '').replace('正在', '')
-				}
-			}
+			createApp({
+				setup() {
+					// 响应式数据
+					const shareText = ref('')
+					const isLoading = ref(false)
+					const showResults = ref(false)
+					const videoData = ref(null)
+					const imageData = ref([])
+					const infoData = ref(null)
+					const textareaRef = ref(null)
 
-			// 显示结果
-			function showResult(title, content, isError = false) {
-				const resultArea = document.getElementById('result')
-				const resultTitle = document.getElementById('resultTitle')
-				const resultContent = document.getElementById('resultContent')
+					// 格式化数字
+					const formatCount = (count) => {
+						if (!count) return '0'
+						if (count >= 10000) {
+							return (count / 10000).toFixed(1) + 'w'
+						}
+						return count.toString()
+					}
 
-				resultTitle.innerHTML = title
-				resultContent.textContent = content
+					// 清理结果
+					const clearResults = () => {
+						videoData.value = null
+						imageData.value = []
+						infoData.value = null
+					}
 
-				if (isError) {
-					resultArea.classList.add('error')
-				} else {
-					resultArea.classList.remove('error')
-				}
+					// 滚动到结果
+					const scrollToResults = () => {
+						nextTick(() => {
+							const results = document.querySelector('.results')
+							if (results) {
+								results.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+							}
+						})
+					}
 
-				resultArea.style.display = 'block'
-				resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-			}
+					// 显示信息
+					const showInfo = (title, content, isError = false) => {
+						infoData.value = { title, content, isError }
+						showResults.value = true
+						scrollToResults()
+					}
 
-			// 显示图片方法
-			function showImages(imageUrls = []) {
-				const gallery = document.getElementById('imageGallery')
-				const grid = document.getElementById('galleryGrid')
-				grid.innerHTML = '' // 清空旧内容
+					// 显示视频
+					const showVideo = (coverUrl, downloadUrl) => {
+						videoData.value = { coverUrl, downloadUrl }
+						showResults.value = true
+						scrollToResults()
+					}
 
-				if (imageUrls.length === 0) {
-					gallery.style.display = 'none'
-					return
-				}
+					// 显示图片
+					const showImages = (images) => {
+						imageData.value = images
+						showResults.value = true
+						scrollToResults()
+					}
 
-				imageUrls.forEach((url) => {
-					const img = document.createElement('img')
-					img.src = url
-					grid.appendChild(img)
-				})
+					// 预览图片
+					const previewImage = (imageUrl) => {
+						window.open(imageUrl, '_blank')
+					}
 
-				gallery.style.display = 'block'
-				gallery.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-			}
+					// 下载视频
+					const downloadVideo = () => {
+						if (videoData.value?.downloadUrl) {
+							window.open(videoData.value.downloadUrl, '_blank')
+						}
+					}
 
-			// 解析视频函数
-			async function parseVideo() {
-				const shareText = document.getElementById('shareText').value.trim()
-				if (!shareText) {
-					alert('请输入抖音分享内容！')
-					document.getElementById('shareText').focus()
-					return
-				}
+					// 解析视频
+					const parseVideo = async () => {
+						const text = shareText.value.trim()
+						if (!text) {
+							alert('请输入抖音分享内容！')
+							textareaRef.value?.focus()
+							return
+						}
 
-				setButtonLoading(
-					'parseBtn',
-					'parseSpinner',
-					'parseIcon',
-					'parseText',
-					true,
-					'正在解析中...'
-				)
-				showResult('🔄 解析状态', '正在解析视频信息，请稍候...')
+						isLoading.value = true
+						clearResults()
+						showInfo('解析中', '正在解析视频信息，请稍候...')
 
-				try {
-					const response = await fetch('/api/parse', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-							Accept: 'application/json'
-						},
-						body: `shareText=${encodeURIComponent(shareText)}`
+						try {
+							const response = await fetch('/api/parse', {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/x-www-form-urlencoded',
+									Accept: 'application/json'
+								},
+								body: `shareText=${encodeURIComponent(text)}`
+							})
+
+							if (!response.ok) {
+								const errorText = await response.text()
+								throw new Error(`服务器错误 (${response.status}): ${errorText}`)
+							}
+
+							const result = await response.json()
+
+							if (result.success) {
+								const data = result.data
+
+								// 根据类型显示内容
+								if (data.aweme_type == 2 && data.allImg && data.allImg.length > 0) {
+									// 图片
+									showImages(data.allImg)
+									infoData.value = null // 清除loading信息
+								} else if (data.aweme_type == 4 && data.cover) {
+									// 视频
+									const coverUrl = Array.isArray(data.cover)
+										? data.cover[0]
+										: data.cover
+									const videoUrl = data.url
+									showVideo(coverUrl, videoUrl)
+									infoData.value = null // 清除loading信息
+								} else {
+									// 显示原始数据
+									showInfo('解析完成', JSON.stringify(result, null, 2))
+								}
+							} else {
+								clearResults()
+								showInfo('解析失败', result.message || '解析过程中出现错误', true)
+							}
+						} catch (error) {
+							console.error('Parse error:', error)
+							clearResults()
+							showInfo(
+								'解析失败',
+								`网络请求失败: ${error.message}\n\n请检查网络连接或稍后重试`,
+								true
+							)
+						} finally {
+							isLoading.value = false
+						}
+					}
+
+					// 键盘事件
+					const handleKeydown = (e) => {
+						if (e.ctrlKey && e.key === 'Enter') {
+							parseVideo()
+						}
+					}
+
+					// 初始化
+					onMounted(() => {
+						textareaRef.value?.focus()
+						document.addEventListener('keydown', handleKeydown)
 					})
 
-					if (!response.ok) {
-						const errorText = await response.text()
-						throw new Error(`服务器错误 (${response.status}): ${errorText}`)
+					return {
+						shareText,
+						isLoading,
+						showResults,
+						videoData,
+						imageData,
+						infoData,
+						textareaRef,
+						formatCount,
+						parseVideo,
+						downloadVideo,
+						previewImage
 					}
-
-					const result = await response.json()
-
-					if (result.success) {
-						showResult('✅ 解析成功', JSON.stringify(result, null, 2))
-						console.log('解析结果:', result)
-
-						if (result.data.aweme_type == 2) {
-							// 显示图片
-							showImages(result.data.allImg)
-						}
-
-						if (result.data.aweme_type == 4) {
-							// 显示封面
-							showImages(result.data.cover)
-						}
-					} else {
-						showResult('❌ 解析失败', result.message || '解析过程中出现错误', true)
-					}
-				} catch (error) {
-					console.error('Parse error:', error)
-					showResult(
-						'❌ 解析失败',
-						`网络请求失败: ${error.message}\n\n请检查网络连接或稍后重试`,
-						true
-					)
-				} finally {
-					setButtonLoading(
-						'parseBtn',
-						'parseSpinner',
-						'parseIcon',
-						'parseText',
-						false,
-						'解析视频'
-					)
 				}
-			}
-
-			// 页面加载完成后的初始化
-			document.addEventListener('DOMContentLoaded', function () {
-				document.getElementById('shareText').focus()
-				document.addEventListener('keydown', function (e) {
-					if (e.ctrlKey && e.key === 'Enter') {
-						parseVideo()
-					}
-				})
-			})
+			}).mount('#app')
 		</script>
 	</body>
 </html>

@@ -57,6 +57,7 @@ router.post('/download', async (ctx) => {
 
 	try {
 		const videoInfo = await processor.parseShareUrl(shareLink || shareText)
+		// 直接保存到服务端-创建日期格式的目录
 		// const filepath = await processor.downloadVideo(videoInfo)
 
 		ctx.body = {
