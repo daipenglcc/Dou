@@ -19,6 +19,108 @@
 				padding: 20px;
 			}
 
+			/* 页面加载动画样式 */
+			.page-loading {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: linear-gradient(135deg, #667eea, #764ba2);
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				z-index: 9999;
+				transition:
+					opacity 0.8s ease,
+					visibility 0.8s ease;
+			}
+
+			.page-loading.hidden {
+				opacity: 0;
+				visibility: hidden;
+			}
+
+			.loading-content {
+				text-align: center;
+				color: white;
+			}
+
+			.loading-logo {
+				font-size: 4rem;
+				margin-bottom: 20px;
+				animation: bounce 2s infinite;
+			}
+
+			.loading-title {
+				font-size: 2rem;
+				font-weight: 700;
+				margin-bottom: 10px;
+				opacity: 0.9;
+			}
+
+			.loading-subtitle {
+				font-size: 1rem;
+				opacity: 0.7;
+				margin-bottom: 40px;
+			}
+
+			.loading-spinner {
+				position: relative;
+				width: 60px;
+				height: 60px;
+				margin: 0 auto;
+			}
+
+			.loading-spinner::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				border: 4px solid rgba(255, 255, 255, 0.2);
+				border-top: 4px solid white;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+			}
+
+			@keyframes bounce {
+				0%,
+				20%,
+				50%,
+				80%,
+				100% {
+					transform: translateY(0);
+				}
+				40% {
+					transform: translateY(-15px);
+				}
+				60% {
+					transform: translateY(-8px);
+				}
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			/* 主应用样式 - 初始隐藏 */
+			#app {
+				opacity: 0;
+				transition: opacity 0.6s ease;
+			}
+
+			#app.loaded {
+				opacity: 1;
+			}
+
 			.container {
 				max-width: 800px;
 				margin: 0 auto;
@@ -143,15 +245,6 @@
 				border-top: 2px solid white;
 				border-radius: 50%;
 				animation: spin 1s linear infinite;
-			}
-
-			@keyframes spin {
-				0% {
-					transform: rotate(0deg);
-				}
-				100% {
-					transform: rotate(360deg);
-				}
 			}
 
 			/* 结果展示区域 */
@@ -279,6 +372,14 @@
 
 			/* 响应式 */
 			@media (max-width: 768px) {
+				.loading-logo {
+					font-size: 3rem;
+				}
+
+				.loading-title {
+					font-size: 1.5rem;
+				}
+
 				.title {
 					font-size: 2rem;
 				}
@@ -314,6 +415,17 @@
 		</style>
 	</head>
 	<body>
+		<!-- 页面加载动画 -->
+		<div id="pageLoading" class="page-loading">
+			<div class="loading-content">
+				<div class="loading-logo">🎵</div>
+				<h1 class="loading-title">抖音视频下载器</h1>
+				<p class="loading-subtitle">正在加载页面，请稍候...</p>
+				<div class="loading-spinner"></div>
+			</div>
+		</div>
+
+		<!-- 主应用 -->
 		<div id="app">
 			<div class="container">
 				<!-- 头部 -->
@@ -442,158 +554,200 @@
 		<!-- Vue 3 CDN -->
 		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 		<script>
-			const { createApp, ref, onMounted, nextTick } = Vue
+			// 页面加载完成后的处理
+			function initApp() {
+				const { createApp, ref, onMounted, nextTick } = Vue
 
-			createApp({
-				setup() {
-					// 响应式数据
-					const shareText = ref('')
-					const isLoading = ref(false)
-					const showResults = ref(false)
-					const videoData = ref(null)
-					const imageData = ref([])
-					const infoData = ref(null)
-					const textareaRef = ref(null)
-					const allData = ref(null)
+				const app = createApp({
+					setup() {
+						// 响应式数据
+						const shareText = ref('')
+						const isLoading = ref(false)
+						const showResults = ref(false)
+						const videoData = ref(null)
+						const imageData = ref([])
+						const infoData = ref(null)
+						const textareaRef = ref(null)
+						const allData = ref(null)
 
-					// 清理结果
-					const clearResults = () => {
-						videoData.value = null
-						imageData.value = []
-						infoData.value = null
-					}
-
-					// 滚动到结果
-					const scrollToResults = () => {
-						nextTick(() => {
-							const results = document.querySelector('.results')
-							if (results) {
-								results.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-							}
-						})
-					}
-
-					// 显示信息
-					const showInfo = (title, content, isError = false) => {
-						infoData.value = { title, content, isError }
-						showResults.value = true
-						scrollToResults()
-					}
-
-					// 显示视频
-					const showVideo = (coverUrl, downloadUrl) => {
-						videoData.value = { coverUrl, downloadUrl }
-						showResults.value = true
-						scrollToResults()
-					}
-
-					// 显示图片
-					const showImages = (images) => {
-						imageData.value = images
-						showResults.value = true
-						scrollToResults()
-					}
-
-					// 下载视频
-					const downloadVideo = () => {
-						console.log('Download video:', allData.value)
-						const url = `/download-stream?url=${encodeURIComponent(videoData.value.downloadUrl)}&title=${encodeURIComponent(allData.value.video_id)}`
-						window.location.href = url
-					}
-
-					// 解析视频
-					const parseVideo = async () => {
-						const text = shareText.value.trim()
-						if (!text) {
-							alert('请输入抖音分享内容！')
-							textareaRef.value?.focus()
-							return
+						// 清理结果
+						const clearResults = () => {
+							videoData.value = null
+							imageData.value = []
+							infoData.value = null
 						}
 
-						isLoading.value = true
-						clearResults()
-						showInfo('解析中', '正在解析视频信息，请稍候...')
-
-						try {
-							const response = await fetch('/api/parse', {
-								method: 'POST',
-								headers: {
-									'Content-Type': 'application/x-www-form-urlencoded',
-									Accept: 'application/json'
-								},
-								body: `shareText=${encodeURIComponent(text)}`
-							})
-
-							if (!response.ok) {
-								const errorText = await response.text()
-								throw new Error(`服务器错误 (${response.status}): ${errorText}`)
-							}
-
-							const result = await response.json()
-
-							if (result.success) {
-								const data = result.data
-								allData.value = data
-								// 根据类型显示内容
-								if (data.aweme_type == 2 && data.allImg && data.allImg.length > 0) {
-									// 图片
-									showImages(data.allImg)
-									infoData.value = null // 清除loading信息
-								} else if (data.aweme_type == 4 && data.cover) {
-									// 视频
-									const coverUrl = Array.isArray(data.cover)
-										? data.cover[0]
-										: data.cover
-									const videoUrl = data.url
-									showVideo(coverUrl, videoUrl)
-									infoData.value = null // 清除loading信息
-								} else {
-									// 显示原始数据
-									showInfo('解析完成', JSON.stringify(result, null, 2))
+						// 滚动到结果
+						const scrollToResults = () => {
+							nextTick(() => {
+								const results = document.querySelector('.results')
+								if (results) {
+									results.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 								}
-							} else {
-								clearResults()
-								showInfo('解析失败', result.message || '解析过程中出现错误', true)
+							})
+						}
+
+						// 显示信息
+						const showInfo = (title, content, isError = false) => {
+							infoData.value = { title, content, isError }
+							showResults.value = true
+							scrollToResults()
+						}
+
+						// 显示视频
+						const showVideo = (coverUrl, downloadUrl) => {
+							videoData.value = { coverUrl, downloadUrl }
+							showResults.value = true
+							scrollToResults()
+						}
+
+						// 显示图片
+						const showImages = (images) => {
+							imageData.value = images
+							showResults.value = true
+							scrollToResults()
+						}
+
+						// 下载视频
+						const downloadVideo = () => {
+							console.log('Download video:', allData.value)
+							const url = `/api/download-stream?url=${encodeURIComponent(allData.value.url)}&title=${encodeURIComponent(allData.value.video_id)}`
+							window.location.href = url
+						}
+
+						// 解析视频
+						const parseVideo = async () => {
+							const text = shareText.value.trim()
+							if (!text) {
+								alert('请输入抖音分享内容！')
+								textareaRef.value?.focus()
+								return
 							}
-						} catch (error) {
-							console.error('Parse error:', error)
+
+							isLoading.value = true
 							clearResults()
-							showInfo(
-								'解析失败',
-								`网络请求失败: ${error.message}\n\n请检查网络连接或稍后重试`,
-								true
-							)
-						} finally {
-							isLoading.value = false
+							showInfo('解析中', '正在解析视频信息，请稍候...')
+
+							try {
+								const response = await fetch('/api/parse', {
+									method: 'POST',
+									headers: {
+										'Content-Type': 'application/x-www-form-urlencoded',
+										Accept: 'application/json'
+									},
+									body: `shareText=${encodeURIComponent(text)}`
+								})
+
+								if (!response.ok) {
+									const errorText = await response.text()
+									throw new Error(`服务器错误 (${response.status}): ${errorText}`)
+								}
+
+								const result = await response.json()
+
+								if (result.success) {
+									const data = result.data
+									allData.value = data
+									// 根据类型显示内容
+									if (
+										data.aweme_type == 2 &&
+										data.allImg &&
+										data.allImg.length > 0
+									) {
+										// 图片
+										showImages(data.allImg)
+										infoData.value = null // 清除loading信息
+									} else if (data.aweme_type == 4 && data.cover) {
+										// 视频
+										const coverUrl = Array.isArray(data.cover)
+											? data.cover[0]
+											: data.cover
+										const videoUrl = data.url
+										showVideo(coverUrl, videoUrl)
+										infoData.value = null // 清除loading信息
+									} else {
+										// 显示原始数据
+										showInfo('解析完成', JSON.stringify(result, null, 2))
+									}
+								} else {
+									clearResults()
+									showInfo(
+										'解析失败',
+										result.message || '解析过程中出现错误',
+										true
+									)
+								}
+							} catch (error) {
+								console.error('Parse error:', error)
+								clearResults()
+								showInfo(
+									'解析失败',
+									`网络请求失败: ${error.message}\n\n请检查网络连接或稍后重试`,
+									true
+								)
+							} finally {
+								isLoading.value = false
+							}
+						}
+
+						// 键盘事件
+						const handleKeydown = (e) => {
+							if (e.ctrlKey && e.key === 'Enter') {
+								parseVideo()
+							}
+						}
+
+						// 初始化
+						onMounted(() => {
+							textareaRef.value?.focus()
+							document.addEventListener('keydown', handleKeydown)
+						})
+
+						return {
+							shareText,
+							isLoading,
+							showResults,
+							videoData,
+							imageData,
+							infoData,
+							textareaRef,
+							parseVideo,
+							downloadVideo
 						}
 					}
+				})
 
-					// 键盘事件
-					const handleKeydown = (e) => {
-						if (e.ctrlKey && e.key === 'Enter') {
-							parseVideo()
+				app.mount('#app')
+
+				// 显示主应用，隐藏loading
+				setTimeout(() => {
+					const appElement = document.getElementById('app')
+					const loadingElement = document.getElementById('pageLoading')
+
+					appElement.classList.add('loaded')
+					loadingElement.classList.add('hidden')
+
+					// 完全移除loading元素
+					setTimeout(() => {
+						loadingElement.remove()
+					}, 800)
+				}, 500) // 延迟500ms确保Vue完全初始化
+			}
+
+			// Vue加载完成后初始化应用
+			if (typeof Vue !== 'undefined') {
+				initApp()
+			} else {
+				// 如果Vue还没加载完成，等待加载
+				document.addEventListener('DOMContentLoaded', () => {
+					const checkVue = setInterval(() => {
+						if (typeof Vue !== 'undefined') {
+							clearInterval(checkVue)
+							initApp()
 						}
-					}
-
-					// 初始化
-					onMounted(() => {
-						textareaRef.value?.focus()
-						document.addEventListener('keydown', handleKeydown)
-					})
-
-					return {
-						shareText,
-						isLoading,
-						showResults,
-						videoData,
-						imageData,
-						infoData,
-						textareaRef,
-						parseVideo,
-						downloadVideo
-					}
-				}
-			}).mount('#app')
+					}, 50)
+				})
+			}
 		</script>
 	</body>
 </html>
