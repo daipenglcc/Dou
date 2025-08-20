@@ -41,6 +41,26 @@ router.post('/parse', async (ctx) => {
 	}
 })
 
+router.get('/download-stream', async (ctx) => {
+	const { url, title } = ctx.query
+	if (!url) {
+		ctx.status = 400
+		ctx.body = '缺少视频 URL'
+		return
+	}
+
+	// 设置下载头
+	ctx.set('Content-Type', 'application/octet-stream')
+	ctx.set(
+		'Content-Disposition',
+		`attachment; filename="${encodeURIComponent(title || 'video')}.mp4"`
+	)
+
+	// 获取视频流并返回
+	const response = await axios.get(url, { responseType: 'stream' })
+	ctx.body = response.data
+})
+
 // 下载接口
 router.post('/download', async (ctx) => {
 	const { shareLink, shareText } = ctx.request.body

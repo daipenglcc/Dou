@@ -454,6 +454,7 @@
 					const imageData = ref([])
 					const infoData = ref(null)
 					const textareaRef = ref(null)
+					const allData = ref(null)
 
 					// 清理结果
 					const clearResults = () => {
@@ -495,17 +496,9 @@
 
 					// 下载视频
 					const downloadVideo = () => {
-						// if (videoData.value?.downloadUrl) {
-						// 	window.open(videoData.value.downloadUrl, '_blank')
-						// }
-						if (videoData.value?.downloadUrl) {
-							const a = document.createElement('a')
-							a.href = videoData.value.downloadUrl
-							a.download = (videoData.value.title || 'video') + '.mp4' // 指定下载文件名
-							document.body.appendChild(a)
-							a.click()
-							document.body.removeChild(a)
-						}
+						console.log('Download video:', allData.value)
+						const url = `/download-stream?url=${encodeURIComponent(videoData.value.downloadUrl)}&title=${encodeURIComponent(allData.value.video_id)}`
+						window.location.href = url
 					}
 
 					// 解析视频
@@ -540,7 +533,7 @@
 
 							if (result.success) {
 								const data = result.data
-
+								allData.value = data
 								// 根据类型显示内容
 								if (data.aweme_type == 2 && data.allImg && data.allImg.length > 0) {
 									// 图片
