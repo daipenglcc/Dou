@@ -446,22 +446,35 @@
 							<textarea
 								v-model="shareText"
 								class="input"
-								placeholder="请粘贴完整的抖音分享内容或链接..."
+								placeholder="请粘贴抖音完整分享内容，例如：复制打开抖音，看看【XXX的作品】... https://v.douyin.com/xxxx/"
 								required
 								ref="textareaRef"
 							></textarea>
 						</div>
 
-						<button
-							type="button"
-							class="btn btn-primary"
-							@click="parseVideo"
-							:disabled="isLoading"
-						>
-							<div v-show="isLoading" class="spinner"></div>
-							<span v-show="!isLoading">🔍</span>
-							<span>{{ isLoading ? '正在解析...' : '解析视频' }}</span>
-						</button>
+						<!-- 按钮组 -->
+						<div style="display: flex; gap: 10px; flex-wrap: wrap">
+							<button
+								type="button"
+								class="btn btn-primary"
+								@click="parseVideo"
+								:disabled="isLoading"
+								style="flex: 1"
+							>
+								<div v-show="isLoading" class="spinner"></div>
+								<span v-show="!isLoading">🔍</span>
+								<span>{{ isLoading ? '正在解析...' : '解析视频' }}</span>
+							</button>
+
+							<button
+								type="button"
+								class="btn btn-success"
+								@click="clearInput"
+								style="flex: 1"
+							>
+								🧹 清空
+							</button>
+						</div>
 					</form>
 				</div>
 
@@ -577,6 +590,18 @@
 							infoData.value = null
 						}
 
+						// 清空输入和结果
+						const clearInput = () => {
+							if (!shareText.value.trim()) {
+								alert('请输入抖音分享内容！')
+								textareaRef.value?.focus()
+								return
+							}
+							shareText.value = ''
+							clearResults()
+							textareaRef.value?.focus()
+						}
+
 						// 滚动到结果
 						const scrollToResults = () => {
 							nextTick(() => {
@@ -611,7 +636,9 @@
 						// 下载视频
 						const downloadVideo = () => {
 							console.log('Download video:', allData.value)
-							const url = `/api/download-stream?url=${encodeURIComponent(allData.value.url)}&title=${encodeURIComponent(allData.value.video_id)}`
+							const url = `/api/download-stream?url=${encodeURIComponent(
+								allData.value.url
+							)}&title=${encodeURIComponent(allData.value.video_id)}`
 							window.location.href = url
 						}
 
@@ -656,7 +683,7 @@
 									) {
 										// 图片
 										showImages(data.allImg)
-										infoData.value = null // 清除loading信息
+										infoData.value = null
 									} else if (data.aweme_type == 4 && data.cover) {
 										// 视频
 										const coverUrl = Array.isArray(data.cover)
@@ -664,7 +691,7 @@
 											: data.cover
 										const videoUrl = data.url
 										showVideo(coverUrl, videoUrl)
-										infoData.value = null // 清除loading信息
+										infoData.value = null
 									} else {
 										// 显示原始数据
 										showInfo('解析完成', JSON.stringify(result, null, 2))
@@ -712,7 +739,8 @@
 							infoData,
 							textareaRef,
 							parseVideo,
-							downloadVideo
+							downloadVideo,
+							clearInput
 						}
 					}
 				})
