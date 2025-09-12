@@ -101,6 +101,44 @@ router.post('/download', async (ctx) => {
 })
 
 /**
+ * GET /proxyFile?url=...
+ * 代理下载视频或图片文件
+ */
+router.get('/proxyFile', async (ctx) => {
+	const { url } = ctx.query
+
+	if (!url) {
+		ctx.status = 400
+		ctx.body = { success: false, error: '请提供 url 参数' }
+		return
+	}
+
+	try {
+		// 请求远程文件流
+		const response = await axios.get(url, {
+			responseType: 'stream',
+			headers: {
+				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+			}
+		})
+
+		// 获取文件名
+		const fileName = path.basename(url.split('?')[0]) || 'file'
+
+		// 设置响应头
+		ctx.set('Content-Disposition', `attachment; filename="${fileName}"`)
+		ctx.set('Content-Type', response.headers['content-type'] || 'application/octet-stream')
+
+		// 直接返回文件流
+		ctx.body = response.data
+	} catch (error) {
+		console.error('Proxy file error:', error.message)
+		ctx.status = 500
+		ctx.body = { success: false, error: '代理下载失败' }
+	}
+})
+
+/**
  * 将视频流直接传给客户端
  * @param {Object} ctx Koa ctx
  * @param {String} videoUrl 视频下载地址
