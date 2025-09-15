@@ -74,7 +74,9 @@ class DouyinProcessor {
 			url: videoUrl,
 			cover: coverImg,
 			allImg: allImg,
-			type: data.video ? 'video' : 'image'
+			type: data.video ? 'video' : 'image',
+			short_id: data.author.short_id,
+			nickname: data.author.nickname
 		}
 	}
 
