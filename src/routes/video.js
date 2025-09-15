@@ -125,9 +125,14 @@ router.get('/proxyFile', async (ctx) => {
 		// 获取文件名
 		const fileName = path.basename(url.split('?')[0]) || 'file'
 
-		// 设置响应头
+		// 设置响应头（把远程头部透传给前端）
 		ctx.set('Content-Disposition', `attachment; filename="${fileName}"`)
 		ctx.set('Content-Type', response.headers['content-type'] || 'application/octet-stream')
+
+		// ⭐ 把 Content-Length 转发给前端
+		if (response.headers['content-length']) {
+			ctx.set('Content-Length', response.headers['content-length'])
+		}
 
 		// 直接返回文件流
 		ctx.body = response.data
