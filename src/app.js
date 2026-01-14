@@ -30,6 +30,9 @@ app.use(router.routes())
 app.use(router.allowedMethods())
 
 const PORT = 7777
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`)
 })
+
+// 设置超时时间为 10 分钟（10 * 60 * 1000 毫秒）
+server.setTimeout(10 * 60 * 1000)
