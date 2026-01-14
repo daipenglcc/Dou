@@ -119,7 +119,8 @@ router.get('/proxyFile', async (ctx) => {
 			responseType: 'stream',
 			headers: {
 				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-			}
+			},
+			timeout: 10 * 60 * 1000 // 10 分钟
 		})
 
 		// 获取文件名
