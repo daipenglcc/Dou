@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Auto Git Commit & Push",
+  "description": "一键分析代码变更，自动生成符合 Conventional Commits 规范的 commit message，并执行 git add、git commit 和 git push",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "请先 activate auto-git-push power，然后严格按照 power 文档中 Workflow 1（智能提交推送）的步骤执行：1. 运行 git status 和 git diff --stat 查看当前变更；2. 分析变更文件，按照 power 文档中的 Type 类型表和 Scope 规则判断变更类型和 scope；3. 按照 power 文档中的 Subject 规则生成符合 Conventional Commits 规范的中文 commit message；4. 执行 git add -A；5. 执行 git commit；6. 执行 git push。如果没有变更则提示用户。"
+  }
+}
