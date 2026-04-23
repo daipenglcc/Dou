@@ -50,7 +50,12 @@ class DouyinProcessor {
 		}
 
 		const data = originalInfo.item_list[0]
-		// console.log("data",data) // 打印视频信息
+
+		delete data.cha_list
+		delete data.risk_infos
+		delete data.mix_info
+		delete data.music
+		console.log("data",data) // 打印视频信息
 		const aweme_type = data.aweme_type // 2:图文 4:视频
 		let videoUrl, coverImg, allImg, desc
 
@@ -69,17 +74,27 @@ class DouyinProcessor {
 		desc = desc.replace(/[\\/:*?"<>|]/g, '_')
 
 		return {
-			aweme_id: data.aweme_id,// 作品唯一ID（每条作品的身份证）
+			// 作品信息
+			aweme_id: data.aweme_id, // 作品唯一ID
 			aweme_type: aweme_type, // 内容类型 2:图文 4:视频
-			video_id: videoId, // 视频Id
+			type: data.video ? 'video' : 'image',
 			title: desc, // 作品描述
 			cover: coverImg, // 视频封面图
-			allImg: allImg,
-			url: videoUrl,
-			type: data.video ? 'video' : 'image',
-			nickname: data.author.nickname, // 用户昵称
-			short_id: data.author.short_id, // 用户抖音号
-			avatar_thumb: data.avatar_thumb, // 用户头像（不同尺寸）
+			allImg: allImg, // 图集图片列表
+			url: videoUrl, // 视频播放地址
+			// 作者信息
+			author: {
+				nickname: data.author.nickname, // 用户昵称
+				short_id: data.author.short_id, // 用户抖音号
+				avatar: data.author.avatar_thumb.url_list[0], // 用户头像
+			},
+			// 统计信息
+			statistics: {
+				digg_count: data.statistics.digg_count, // 点赞数
+				comment_count: data.statistics.comment_count, // 评论数
+				share_count: data.statistics.share_count, // 分享数
+				collect_count: data.statistics.collect_count, // 收藏数
+			},
 		}
 	}
 
