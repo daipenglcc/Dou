@@ -11,7 +11,7 @@
 - koa-router — 路由
 - koa-bodyparser — 请求体解析
 - koa-views + EJS — 服务端模板渲染
-- axios — HTTP 请求（用于抓取抖音页面和下载文件流）
+- axios — HTTP 请求（用于抓取页面和下载文件流）
 
 ## 前端
 

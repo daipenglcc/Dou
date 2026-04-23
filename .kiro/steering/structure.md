@@ -6,7 +6,12 @@ src/
 ├── routes/
 │   └── video.js            # API 路由（解析、下载、代理）
 ├── utils/
-│   ├── douyinProcessor.js  # 核心业务逻辑：链接解析、视频下载
+│   ├── platformProcessor.js # 多平台解析统一入口
+│   ├── platforms/          # 各平台解析器模块
+│   │   ├── douyinParser.js     # 抖音平台解析器
+│   │   ├── xiaohongshuParser.js # 小红书平台解析器
+│   │   ├── kuaishouParser.js   # 快手平台解析器
+│   │   └── bilibiliParser.js   # B站平台解析器
 │   └── userAgents.js       # 随机 User-Agent 生成
 ├── views/
 │   └── index/
@@ -16,13 +21,14 @@ src/
 
 ## 架构模式
 
-- 简单的 MVC 分层：routes 处理请求 → utils 处理业务逻辑 → views 渲染页面
-- `DouyinProcessor` 类封装所有抖音相关的解析和下载逻辑
-- 路由文件按功能模块划分（当前只有 video）
+- **模块化分层**：routes 处理请求 → platformProcessor 统一调度 → 各平台解析器处理具体逻辑 → views 渲染页面
+- **策略模式**：`PlatformProcessor` 根据链接类型选择对应的平台解析器
+- **单一职责**：每个平台解析器只负责自己平台的解析逻辑，便于维护和扩展
 
 ## 关键约定
 
 - 路由文件放在 `src/routes/`，通过 `koa-router` 注册到 `/api` 前缀下
+- 平台解析器放在 `src/utils/platforms/`，统一实现 `parseUrl(shareUrl)` 方法
 - 工具类放在 `src/utils/`
 - 视图模板放在 `src/views/{页面名}/` 下
 - 下载文件按日期存储在 `src/downloads/{YYYY-MM-DD}/`
