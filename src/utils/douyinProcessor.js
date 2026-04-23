@@ -55,7 +55,7 @@ class DouyinProcessor {
 		delete data.risk_infos
 		delete data.mix_info
 		delete data.music
-		console.log("data",data) // 打印视频信息
+		// console.log("data",data) // 打印视频信息
 		const aweme_type = data.aweme_type // 2:图文 4:视频
 		let videoUrl, coverImg, allImg, desc
 
@@ -77,7 +77,6 @@ class DouyinProcessor {
 			// 作品信息
 			aweme_id: data.aweme_id, // 作品唯一ID
 			aweme_type: aweme_type, // 内容类型 2:图文 4:视频
-			type: data.video ? 'video' : 'image',
 			title: desc, // 作品描述
 			cover: coverImg, // 视频封面图
 			allImg: allImg, // 图集图片列表
