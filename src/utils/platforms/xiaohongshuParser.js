@@ -92,10 +92,15 @@ class XiaohongshuParser {
 		let allImg = []
 
 		if (isVideo && noteData.video) {
-			// 视频类型（暂时不处理，小红书视频解析较复杂）
-			videoUrl = null // TODO: 实现视频解析
-			if (noteData.cover && noteData.cover.url) {
-				coverImg = [noteData.cover.url]
+			// 从 media.stream.h264 中取视频地址，优先取第一条
+			const h264List = noteData.video.media?.stream?.h264
+			if (h264List && h264List.length > 0) {
+				videoUrl = h264List[0].masterUrl
+			}
+			// 封面图：视频封面取 imageList[0].urlDefault
+			const firstImg = noteData.imageList?.[0]
+			if (firstImg) {
+				coverImg = [firstImg.urlDefault || firstImg.urlPre || '']
 			}
 		} else {
 			// 图文类型
