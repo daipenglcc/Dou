@@ -6,6 +6,7 @@ const path = require('path')
 const videoRouter = require('./routes/video')
 
 const app = new Koa()
+app.proxy = true
 const router = new Router()
 
 // 配置模板引擎
