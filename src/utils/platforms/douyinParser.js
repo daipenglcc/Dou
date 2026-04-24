@@ -65,17 +65,18 @@ class DouyinParser {
 
 		return {
 			// 作品信息
-			aweme_id: data.aweme_id, // 作品唯一ID
-			aweme_type: aweme_type, // 内容类型 2:图文 4:视频
-			type: data.video ? 'video' : 'image',
-			title: desc, // 作品描述
-			cover: coverImg, // 视频封面图
-			allImg: allImg, // 图集图片列表
-			url: videoUrl, // 视频播放地址
+			project: {
+				project_id: data.aweme_id, // 作品唯一ID
+				title: desc, // 作品标题（抖音无独立title，使用desc）
+				desc: '', // 作品描述（抖音无独立desc字段）
+				type: aweme_type === 4 ? 'video' : 'image', // 内容类型
+				cover: coverImg ? coverImg[0] : '', // 封面图
+				url_list: aweme_type === 4 ? [videoUrl] : allImg, // 视频/图集地址列表
+			},
 			// 作者信息
 			author: {
+				author_id: data.author.uid, // 用户ID
 				nickname: data.author.nickname, // 用户昵称
-				short_id: data.author.short_id, // 用户抖音号
 				avatar: data.author.avatar_thumb.url_list[0], // 用户头像
 			},
 			// 统计信息
@@ -85,6 +86,7 @@ class DouyinParser {
 				share_count: data.statistics.share_count, // 分享数
 				collect_count: data.statistics.collect_count, // 收藏数
 			},
+			platform: 'douyin', // 平台标识
 		}
 	}
 }

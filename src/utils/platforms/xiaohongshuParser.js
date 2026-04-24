@@ -107,38 +107,30 @@ class XiaohongshuParser {
 			}
 		}
 
-		// 作者信息
-		const author = {
-			nickname: noteData.user ? noteData.user.nickname : '未知用户',
-			user_id: noteData.user ? noteData.user.userId : '',
-			avatar: noteData.user ? noteData.user.avatar : ''
-		}
-
-		// 统计信息
-		const statistics = {
-			liked_count: noteData.interactInfo ? parseInt(noteData.interactInfo.likedCount) || 0 : 0,
-			collected_count: noteData.interactInfo ? parseInt(noteData.interactInfo.collectedCount) || 0 : 0,
-			comment_count: noteData.interactInfo ? parseInt(noteData.interactInfo.commentCount) || 0 : 0,
-			share_count: noteData.interactInfo ? parseInt(noteData.interactInfo.shareCount) || 0 : 0
-		}
-
 		return {
-			// 笔记信息
-			note_id: noteId,
-			type: isVideo ? 'video' : 'image',
-			title: cleanTitle,
-			desc: noteData.desc || '',
-			cover: coverImg,
-			allImg: allImg,
-			url: videoUrl,
+			// 作品信息
+			project: {
+				project_id: noteId, // 作品唯一ID
+				title: cleanTitle, // 作品标题
+				desc: noteData.desc || '', // 作品描述
+				type: isVideo ? 'video' : 'image', // 内容类型
+				cover: coverImg.length > 0 ? coverImg[0] : '', // 封面图
+				url_list: isVideo ? (videoUrl ? [videoUrl] : []) : allImg, // 视频/图集地址列表
+			},
 			// 作者信息
-			author: author,
+			author: {
+				author_id: noteData.user ? noteData.user.userId : '', // 用户ID
+				nickname: noteData.user ? noteData.user.nickname : '未知用户', // 用户昵称
+				avatar: noteData.user ? noteData.user.avatar : '', // 用户头像
+			},
 			// 统计信息
-			statistics: statistics,
-			// 标签信息
-			tags: noteData.tagList ? noteData.tagList.map(tag => tag.name) : [],
-			// 平台标识
-			platform: 'xiaohongshu'
+			statistics: {
+				digg_count: noteData.interactInfo ? parseInt(noteData.interactInfo.likedCount) || 0 : 0, // 点赞数
+				comment_count: noteData.interactInfo ? parseInt(noteData.interactInfo.commentCount) || 0 : 0, // 评论数
+				share_count: noteData.interactInfo ? parseInt(noteData.interactInfo.shareCount) || 0 : 0, // 分享数
+				collect_count: noteData.interactInfo ? parseInt(noteData.interactInfo.collectedCount) || 0 : 0, // 收藏数
+			},
+			platform: 'xiaohongshu', // 平台标识
 		}
 	}
 }
