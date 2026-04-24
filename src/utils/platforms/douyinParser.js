@@ -77,7 +77,7 @@ class DouyinParser {
 			author: {
 				author_id: data.author.short_id, // 用户抖音号
 				nickname: data.author.nickname, // 用户昵称
-				avatar: data.author.avatar_thumb.url_list[0], // 用户头像
+				avatar: data.author.avatar_thumb.url_list[0].replace(/\/aweme\/\d+x\d+\//, '/aweme/720x720/'), // 用户头像
 			},
 			// 统计信息
 			statistics: {
