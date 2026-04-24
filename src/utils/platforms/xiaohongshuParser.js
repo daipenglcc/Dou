@@ -81,7 +81,7 @@ class XiaohongshuParser {
 	 * @returns {Object} 格式化的笔记信息
 	 */
 	parseNoteData(noteData, noteId) {
-		const title = noteData.title || `xiaohongshu_${noteId}`
+		const title = noteData.title || noteData.desc || `xiaohongshu_${noteId}`
 		const cleanTitle = title.replace(/[\\/:*?"<>|]/g, '_')
 		
 		// 判断内容类型（小红书主要是图文，视频较少）
