@@ -75,7 +75,7 @@ class DouyinParser {
 			},
 			// 作者信息
 			author: {
-				author_id: data.author.uid, // 用户ID
+				author_id: data.author.short_id, // 用户抖音号
 				nickname: data.author.nickname, // 用户昵称
 				avatar: data.author.avatar_thumb.url_list[0], // 用户头像
 			},
