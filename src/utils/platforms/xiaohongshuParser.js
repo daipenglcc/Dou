@@ -104,22 +104,14 @@ class XiaohongshuParser {
 			}
 			const firstImg = noteData.imageList?.[0]
 			if (firstImg) {
-				// 封面图同样处理水印
-				if (firstImg.fileId) {
-					coverImg = ['https://ci.xiaohongshu.com/' + firstImg.fileId]
-				} else {
-					coverImg = [(firstImg.infoList?.[0]?.url || firstImg.url || '')
-						.replace(/!h5_\w+/g, '')]
-				}
+				// 封面图去掉处理后缀以去除水印
+				coverImg = [(firstImg.infoList?.[0]?.url || firstImg.url || '')
+					.replace(/!h5_\w+/g, '')]
 			}
 		} else {
 			if (noteData.imageList && noteData.imageList.length > 0) {
 				allImg = noteData.imageList.map(img => {
-					// infoList[0].url 带有 !h5_1080jpg 处理后缀会叠加水印
-					// 优先使用 fileId 构造原始图片地址（无水印）
-					if (img.fileId) {
-						return 'https://ci.xiaohongshu.com/' + img.fileId
-					}
+					// infoList[0].url 带有 !h5_1080jpg 处理后缀会叠加水印，去掉即可
 					return (img.infoList?.[0]?.url || img.url || img.urlDefault || img.urlPre)
 						.replace(/!h5_\w+/g, '')
 				}).filter(Boolean)
