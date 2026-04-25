@@ -5,3 +5,7 @@ node_modules/
 logs/
 .eslintcache
 downloads/
+
+# Claude Code
+.claude/commands/
+.claude/settings.local.json
