@@ -106,7 +106,7 @@ class XiaohongshuParser {
 			if (firstImg) {
 				// 封面图同样处理水印
 				if (firstImg.fileId) {
-					coverImg = ['http://ci.xiaohongshu.com/' + firstImg.fileId]
+					coverImg = ['https://ci.xiaohongshu.com/' + firstImg.fileId]
 				} else {
 					coverImg = [(firstImg.infoList?.[0]?.url || firstImg.url || '')
 						.replace(/!h5_\w+/g, '')]
@@ -118,7 +118,7 @@ class XiaohongshuParser {
 					// infoList[0].url 带有 !h5_1080jpg 处理后缀会叠加水印
 					// 优先使用 fileId 构造原始图片地址（无水印）
 					if (img.fileId) {
-						return 'http://ci.xiaohongshu.com/' + img.fileId
+						return 'https://ci.xiaohongshu.com/' + img.fileId
 					}
 					return (img.infoList?.[0]?.url || img.url || img.urlDefault || img.urlPre)
 						.replace(/!h5_\w+/g, '')
