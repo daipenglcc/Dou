@@ -138,7 +138,7 @@ class XiaohongshuParser {
 			author: {
 				author_id: noteData.user ? noteData.user.userId : '',
 				nickname: noteData.user ? (noteData.user.nickName || noteData.user.nickname) : '未知用户',
-				avatar: noteData.user ? noteData.user.avatar : '',
+				avatar: noteData.user ? noteData.user.avatar.replace(/w\/\d+/, 'w/720') : '',
 			},
 			statistics: {
 				digg_count: noteData.interactInfo ? parseInt(noteData.interactInfo.likedCount) || 0 : 0,
