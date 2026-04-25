@@ -109,12 +109,7 @@ class XiaohongshuParser {
 		} else {
 			if (noteData.imageList && noteData.imageList.length > 0) {
 				allImg = noteData.imageList.map(img => {
-					// 优先通过 fileId 构造原始图片地址（无水印）
-					// infoList[0].url 带有 !h5_1080jpg 处理后缀，会叠加水印
-					if (img.fileId) {
-						return 'http://ci.xiaohongshu.com/' + img.fileId
-					}
-					return img.urlDefault || img.urlPre || img.url || img.infoList?.[0]?.url
+					return img.infoList?.[0]?.url || img.url || img.urlDefault || img.urlPre
 				}).filter(Boolean)
 			}
 		}
