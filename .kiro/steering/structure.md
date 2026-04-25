@@ -33,3 +33,38 @@ src/
 - 视图模板放在 `src/views/{页面名}/` 下
 - 下载文件按日期存储在 `src/downloads/{YYYY-MM-DD}/`
 - 配置文件（ESLint、Prettier、PM2、Docker）放在项目根目录
+
+## 解析结果数据结构
+
+所有平台解析器的 `parseUrl` 方法返回统一格式：
+
+```js
+{
+  project: {
+    project_id: '',   // 作品唯一ID
+    title: '',        // 作品标题
+    desc: '',         // 作品描述
+    type: 'video' | 'image', // 内容类型
+    cover: '',        // 封面图 URL
+    url_list: [],     // 视频或图集地址列表
+  },
+  author: {
+    author_id: '',    // 用户ID
+    nickname: '',     // 用户昵称
+    avatar: '',       // 用户头像 URL
+  },
+  statistics: {
+    digg_count: 0,    // 点赞数
+    comment_count: 0, // 评论数
+    share_count: 0,   // 分享数
+    collect_count: 0, // 收藏数
+  },
+  platform: '',       // 平台标识（douyin/xiaohongshu/kuaishou/bilibili）
+}
+```
+
+## 新增平台解析器步骤
+
+1. 在 `src/utils/platforms/` 创建 `{platform}Parser.js`，实现 `parseUrl(shareUrl)` 方法，返回上述统一格式
+2. 在 `src/utils/platformProcessor.js` 中导入并注册到 `this.parsers`
+3. 在 `detectPlatform` 方法中添加域名识别逻辑
