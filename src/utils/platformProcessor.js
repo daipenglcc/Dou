@@ -3,6 +3,7 @@ const DouyinParser = require('./platforms/douyinParser')
 const XiaohongshuParser = require('./platforms/xiaohongshuParser')
 const KuaishouParser = require('./platforms/kuaishouParser')
 const BilibiliParser = require('./platforms/bilibiliParser')
+const ToutiaoParser = require('./platforms/toutiaoParser')
 
 /**
  * 多平台内容解析处理器
@@ -15,7 +16,8 @@ class PlatformProcessor {
 			douyin: new DouyinParser(),
 			xiaohongshu: new XiaohongshuParser(),
 			kuaishou: new KuaishouParser(),
-			bilibili: new BilibiliParser()
+			bilibili: new BilibiliParser(),
+			toutiao: new ToutiaoParser()
 		}
 	}
 
@@ -66,6 +68,8 @@ class PlatformProcessor {
 			return 'xiaohongshu'
 		} else if (domain.includes('bilibili.com') || domain.includes('b23.tv')) {
 			return 'bilibili'
+		} else if (domain.includes('toutiao.com') || domain.includes('toutiao')) {
+			return 'toutiao'
 		} else {
 			return 'unknown'
 		}
