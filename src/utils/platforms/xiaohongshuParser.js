@@ -12,9 +12,9 @@ class XiaohongshuParser {
 	 */
 	async parseUrl(shareUrl) {
 		console.log("开始解析小红书链接:", shareUrl)
-
+		
 		// 第一步：获取重定向后的真实链接
-		const shareResp = await axios.get(shareUrl, {
+		const shareResp = await axios.get(shareUrl, { 
 			headers: getRandomUA(),
 			maxRedirects: 5,
 			timeout: 10000
@@ -22,11 +22,11 @@ class XiaohongshuParser {
 		const realUrl = shareResp.request.res.responseUrl
 		console.log("重定向后的真实链接:", realUrl)
 
-		// 从真实链接中提取笔记ID（备用，新结构可直接从数据中取）
-		let noteIdMatch = realUrl.match(/\/explore\/([a-zA-Z0-9]+)/) ||
-			realUrl.match(/\/discovery\/item\/([a-zA-Z0-9]+)/) ||
-			realUrl.match(/\/note\/([a-zA-Z0-9]+)/)
-
+		// 从真实链接中提取笔记ID
+		let noteIdMatch = realUrl.match(/\/explore\/([a-zA-Z0-9]+)/) || 
+						  realUrl.match(/\/discovery\/item\/([a-zA-Z0-9]+)/) ||
+						  realUrl.match(/\/note\/([a-zA-Z0-9]+)/)
+		
 		if (!noteIdMatch) {
 			throw new Error('无法从链接中提取笔记ID')
 		}
@@ -34,16 +34,16 @@ class XiaohongshuParser {
 		console.log("提取到的笔记ID:", noteId)
 
 		// 第二步：获取页面内容并解析数据
-		const pageResp = await axios.get(realUrl, {
+		const pageResp = await axios.get(realUrl, { 
 			headers: {
-				'User-Agent': getRandomUA(),
+				...getRandomUA(),
 				'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 				'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2'
 			}
 		})
 
 		const html = pageResp.data
-
+		
 		// 提取window.__INITIAL_STATE__数据
 		const scriptMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.*?})\s*<\/script>/s)
 		if (!scriptMatch) {
@@ -62,18 +62,16 @@ class XiaohongshuParser {
 		}
 
 		// 获取笔记详情数据
-		// 新结构: noteData.data.noteData（noteId 直接在返回数据中）
-		// 旧结构: note.noteDetailMap[noteId].note（已废弃，保留兼容）
-		const noteData = jsonData.noteData?.data?.noteData ||
-			jsonData.note?.noteDetailMap?.[noteId]?.note
-		if (!noteData) {
+		const noteDetailMap = jsonData.note?.noteDetailMap
+		if (!noteDetailMap || !noteDetailMap[noteId]) {
 			throw new Error('未找到笔记数据')
 		}
 
+		const noteData = noteDetailMap[noteId].note
 		console.log("获取到笔记数据:", noteData.title)
 
 		// 解析笔记信息
-		return this.parseNoteData(noteData, noteData.noteId || noteId)
+		return this.parseNoteData(noteData, noteId)
 	}
 
 	/**
@@ -85,68 +83,59 @@ class XiaohongshuParser {
 	parseNoteData(noteData, noteId) {
 		const title = noteData.title || noteData.desc || `xiaohongshu_${noteId}`
 		const cleanTitle = title.replace(/[\\/:*?"<>|]/g, '_')
-
-		// title 为空时降级使用 desc 作为标题
-		const effectiveTitle = (noteData.title || noteData.desc || `xiaohongshu_${noteId}`)
-			.replace(/[\\/:*?"<>|]/g, '_')
-
-		// 判断内容类型
+		
+		// 判断内容类型（小红书主要是图文，视频较少）
 		const isVideo = noteData.type === 'video' || (noteData.video && noteData.video.media)
-
+		
 		let videoUrl = null
 		let coverImg = []
 		let allImg = []
 
 		if (isVideo && noteData.video) {
+			// 从 media.stream.h264 中取视频地址，优先取第一条
 			const h264List = noteData.video.media?.stream?.h264
 			if (h264List && h264List.length > 0) {
 				videoUrl = h264List[0].masterUrl
 			}
+			// 封面图：视频封面取 imageList[0].urlDefault
 			const firstImg = noteData.imageList?.[0]
 			if (firstImg) {
-				// 封面图同样处理水印
-				if (firstImg.fileId) {
-					coverImg = ['https://ci.xiaohongshu.com/' + firstImg.fileId]
-				} else {
-					coverImg = [(firstImg.infoList?.[0]?.url || firstImg.url || '')
-						.replace(/!h5_\w+/g, '')]
-				}
+				coverImg = [firstImg.urlDefault || firstImg.urlPre || '']
 			}
 		} else {
+			// 图文类型
 			if (noteData.imageList && noteData.imageList.length > 0) {
 				allImg = noteData.imageList.map(img => {
-					// infoList[0].url 带有 !h5_1080jpg 处理后缀会叠加水印
-					// 优先使用 fileId 构造原始图片地址（无水印）
-					if (img.fileId) {
-						return 'https://ci.xiaohongshu.com/' + img.fileId
-					}
-					return (img.infoList?.[0]?.url || img.url || img.urlDefault || img.urlPre)
-						.replace(/!h5_\w+/g, '')
+					// 优先使用默认尺寸图片
+					return img.urlDefault || img.urlPre || img.url
 				}).filter(Boolean)
 			}
 		}
 
 		return {
+			// 作品信息
 			project: {
-				project_id: noteId,
-				title: effectiveTitle,
-				desc: noteData.desc || '',
-				type: isVideo ? 'video' : 'image',
-				cover: coverImg.length > 0 ? coverImg[0] : '',
-				url_list: isVideo ? (videoUrl ? [videoUrl] : []) : allImg,
+				project_id: noteId, // 作品唯一ID
+				title: cleanTitle, // 作品标题
+				desc: noteData.desc || '', // 作品描述
+				type: isVideo ? 'video' : 'image', // 内容类型
+				cover: coverImg.length > 0 ? coverImg[0] : '', // 封面图
+				url_list: isVideo ? (videoUrl ? [videoUrl] : []) : allImg, // 视频/图集地址列表
 			},
+			// 作者信息
 			author: {
-				author_id: noteData.user ? noteData.user.userId : '',
-				nickname: noteData.user ? (noteData.user.nickName || noteData.user.nickname) : '未知用户',
-				avatar: noteData.user ? noteData.user.avatar.replace(/w\/\d+/, 'w/720') : '',
+				author_id: noteData.user ? noteData.user.userId : '', // 用户ID
+				nickname: noteData.user ? noteData.user.nickname : '未知用户', // 用户昵称
+				avatar: noteData.user ? noteData.user.avatar : '', // 用户头像
 			},
+			// 统计信息
 			statistics: {
-				digg_count: noteData.interactInfo ? parseInt(noteData.interactInfo.likedCount) || 0 : 0,
-				comment_count: noteData.interactInfo ? parseInt(noteData.interactInfo.commentCount) || 0 : 0,
-				share_count: noteData.interactInfo ? parseInt(noteData.interactInfo.shareCount) || 0 : 0,
-				collect_count: noteData.interactInfo ? parseInt(noteData.interactInfo.collectedCount) || 0 : 0,
+				digg_count: noteData.interactInfo ? parseInt(noteData.interactInfo.likedCount) || 0 : 0, // 点赞数
+				comment_count: noteData.interactInfo ? parseInt(noteData.interactInfo.commentCount) || 0 : 0, // 评论数
+				share_count: noteData.interactInfo ? parseInt(noteData.interactInfo.shareCount) || 0 : 0, // 分享数
+				collect_count: noteData.interactInfo ? parseInt(noteData.interactInfo.collectedCount) || 0 : 0, // 收藏数
 			},
-			platform: 'xiaohongshu',
+			platform: 'xiaohongshu', // 平台标识
 		}
 	}
 }
