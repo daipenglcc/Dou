@@ -126,7 +126,7 @@ class XiaohongshuParser {
 			author: {
 				author_id: noteData.user ? noteData.user.userId : '', // 用户ID
 				nickname: noteData.user ? noteData.user.nickname : '未知用户', // 用户昵称
-				avatar: noteData.user ? noteData.user.avatar : '', // 用户头像
+				avatar: noteData.user ? noteData.user.avatar.replace(/w\/\d+/, 'w/720') : '',
 			},
 			// 统计信息
 			statistics: {
