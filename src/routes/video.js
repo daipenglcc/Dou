@@ -5,6 +5,25 @@ const path = require('path')
 
 const router = new Router()
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+
+/**
+ * 通过 HEAD 请求检查远程文件大小，超过限制则返回错误
+ * @returns {number|null} 文件大小（字节），无法获取时返回 null
+ */
+async function checkFileSize(url) {
+	try {
+		const resp = await axios.head(url, {
+			headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+			timeout: 5000
+		})
+		const length = parseInt(resp.headers['content-length'], 10)
+		return isNaN(length) ? null : length
+	} catch {
+		return null
+	}
+}
+
 /**
  * 将 URL 包装为代理地址
  */
@@ -91,7 +110,7 @@ router.post('/parse', async (ctx) => {
 /**
  * GET /api/download-stream
  * 流式下载视频接口
- * 直接将远程视频流转发给客户端，实现边下载边传输
+ * 直接将远程视频流传客户端，实现边下载边传输
  *
  * @route GET /api/download-stream
  * @param {Object} ctx.query - 查询参数
@@ -104,6 +123,17 @@ router.get('/download-stream', async (ctx) => {
 	if (!url) {
 		ctx.status = 400
 		ctx.body = '缺少视频 URL'
+		return
+	}
+
+	// 检查文件大小
+	const fileSize = await checkFileSize(url)
+	if (fileSize !== null && fileSize > MAX_FILE_SIZE) {
+		ctx.status = 413
+		ctx.body = {
+			success: false,
+			error: `文件过大（${(fileSize / 1024 / 1024).toFixed(1)}MB），超过 ${MAX_FILE_SIZE / 1024 / 1024}MB 限制`
+		}
 		return
 	}
 
@@ -140,6 +170,17 @@ router.get('/proxyFile', async (ctx) => {
 	}
 
 	try {
+		// 检查文件大小
+		const fileSize = await checkFileSize(url)
+		if (fileSize !== null && fileSize > MAX_FILE_SIZE) {
+			ctx.status = 413
+			ctx.body = {
+				success: false,
+				error: `文件过大（${(fileSize / 1024 / 1024).toFixed(1)}MB），超过 ${MAX_FILE_SIZE / 1024 / 1024}MB 限制`
+			}
+			return
+		}
+
 		// 请求远程文件流
 		const response = await axios.get(url, {
 			responseType: 'stream',
