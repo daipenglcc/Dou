@@ -23,7 +23,6 @@ class KuaishouParser {
 		console.log('重定向后的真实链接:', realUrl)
 
 		// 第二步：从重定向 URL 的查询参数中提取 photoId
-		// URL 格式: https://v.m.chenzhongtech.com/fw/photo/{photoId}?cc=share_copylink&...
 		const photoIdMatch = realUrl.match(/\/fw\/photo\/([a-zA-Z0-9]+)/)
 		if (!photoIdMatch) {
 			throw new Error('无法从链接中提取作品ID')
@@ -31,8 +30,7 @@ class KuaishouParser {
 		const shortPhotoId = photoIdMatch[1]
 		console.log('提取到的作品ID:', shortPhotoId)
 
-		// 第三步：获取页面内容（需要移动端 UA 配合完整请求头）
-		// 注意：getRandomUA() 返回字符串，不能 spread，需显式指定 User-Agent
+		// 第三步：获取页面内容
 		const pageResp = await axios.get(realUrl, {
 			headers: {
 				'User-Agent': getRandomUA(),
@@ -45,7 +43,6 @@ class KuaishouParser {
 		const html = pageResp.data
 
 		// 第四步：提取 window.INIT_STATE 数据
-		// 注意：不能使用正则匹配 {}，因为 JSON 中包含大量嵌套花括号
 		const stateStart = html.indexOf('window.INIT_STATE')
 		if (stateStart === -1) {
 			throw new Error('无法从页面中提取数据')
@@ -72,7 +69,6 @@ class KuaishouParser {
 		}
 
 		// 第六步：递归搜索包含 mainMvUrls 的 photo 对象
-		// 快手 INIT_STATE 的顶层 key 是混淆过的，无法直接路径访问
 		const photoData = this.findPhotoData(jsonData)
 		if (!photoData) {
 			throw new Error('未找到作品数据')
@@ -86,7 +82,6 @@ class KuaishouParser {
 
 	/**
 	 * 递归搜索包含 mainMvUrls 的 photo 数据对象
-	 * 跳过数组和基本类型，保证能找到最深层的有效数据
 	 */
 	findPhotoData(obj, depth = 0) {
 		if (depth > 20 || typeof obj !== 'object' || obj === null) return null
@@ -117,7 +112,7 @@ class KuaishouParser {
 		const caption = photoData.caption || ''
 		const cleanTitle = caption.replace(/[\\/:*?"<>|]/g, '_') || `kuaishou_${shortPhotoId}`
 
-		// 内容类型判断：singlePicture=false 且 type=1 为视频，否则可能是图集
+		// 内容类型判断：singlePicture=false 且 type=1 为视频，否则是图集/单图
 		const isVideo = !photoData.singlePicture && photoData.type === 1
 
 		// 取第一条视频地址
@@ -126,13 +121,28 @@ class KuaishouParser {
 			videoUrl = photoData.mainMvUrls[0].url
 		}
 
-		// 封面图：取第一条 coverUrls
+		// 封面图
 		let coverImg = ''
 		if (photoData.coverUrls && photoData.coverUrls.length > 0) {
 			coverImg = photoData.coverUrls[0].url
 		}
 
-		// 作者信息：从 soundTrack.user 或 headUrls 推断
+		// 图片列表（图集/单图）
+		let imageUrls = []
+		if (!isVideo) {
+			const atlas = photoData.ext_params?.atlas
+			if (atlas?.list?.length && atlas?.cdn?.length) {
+				const cdns = atlas.cdn
+				imageUrls = atlas.list.map((path, i) => {
+					const cdn = cdns[i % cdns.length]
+					return `https://${cdn}${path}`
+				})
+			} else if (coverImg) {
+				imageUrls = [coverImg]
+			}
+		}
+
+		// 作者信息
 		const author = {
 			author_id: photoData.userId ? String(photoData.userId) : '',
 			nickname: photoData.userName || '未知用户',
@@ -156,7 +166,7 @@ class KuaishouParser {
 				desc: caption,
 				type: isVideo ? 'video' : 'image',
 				cover: coverImg,
-				url_list: isVideo && videoUrl ? [videoUrl] : []
+				url_list: isVideo ? (videoUrl ? [videoUrl] : []) : imageUrls
 			},
 			author,
 			statistics,
