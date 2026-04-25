@@ -104,16 +104,12 @@ class XiaohongshuParser {
 			}
 			const firstImg = noteData.imageList?.[0]
 			if (firstImg) {
-				// 封面图去掉处理后缀以去除水印
-				coverImg = [(firstImg.infoList?.[0]?.url || firstImg.url || '')
-					.replace(/!h5_\w+/g, '')]
+				coverImg = [firstImg.urlDefault || firstImg.urlPre || firstImg.url || '']
 			}
 		} else {
 			if (noteData.imageList && noteData.imageList.length > 0) {
 				allImg = noteData.imageList.map(img => {
-					// infoList[0].url 带有 !h5_1080jpg 处理后缀会叠加水印，去掉即可
-					return (img.infoList?.[0]?.url || img.url || img.urlDefault || img.urlPre)
-						.replace(/!h5_\w+/g, '')
+					return img.urlDefault || img.urlPre || img.url
 				}).filter(Boolean)
 			}
 		}
