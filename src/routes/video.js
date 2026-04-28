@@ -50,6 +50,25 @@ function wrapUrlsWithProxy(data, base) {
  * @returns {string} returns.message - 成功消息
  * @returns {string} returns.timestamp - 时间戳
  */
+/**
+ * 通过 HEAD 请求获取文件大小
+ */
+async function getFileSize(url) {
+	try {
+		const response = await axios.head(url, {
+			headers: {
+				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+			},
+			timeout: 10 * 1000
+		})
+		const contentLength = response.headers['content-length']
+		return contentLength ? parseInt(contentLength, 10) : null
+	} catch (error) {
+		console.error('获取文件大小失败:', url, error.message)
+		return null
+	}
+}
+
 router.post('/parse', async (ctx) => {
 	const { shareLink, shareText } = ctx.request.body
 
@@ -67,6 +86,14 @@ router.post('/parse', async (ctx) => {
 
 	try {
 		const videoInfo = await processor.parseShareUrl(inputText)
+
+		// 获取文件大小（视频和图片类型）
+		if (videoInfo.project?.url_list) {
+			const sizes = await Promise.all(
+				videoInfo.project.url_list.map(url => getFileSize(url))
+			)
+			videoInfo.project.size_list = sizes
+		}
 
 		// 将 cover 和 url_list 中的原始链接包装为同源代理地址
 		const proxyBase = `${ctx.origin}/api/proxyFile?url=`
