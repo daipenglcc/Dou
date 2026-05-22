@@ -241,7 +241,12 @@ router.get('/wechat/login', async (ctx) => {
 
 	try {
 		const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${WX_APP_ID}&secret=${WX_APP_SECRET}&js_code=${code}&grant_type=authorization_code`
-		const response = await axios.get(url)
+		const https = require('https')
+		const response = await axios.get(url, {
+			httpsAgent: new https.Agent({
+				rejectUnauthorized: false
+			})
+		})
 		const data = response.data
 
 		if (data.errcode) {
