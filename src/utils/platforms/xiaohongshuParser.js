@@ -11,39 +11,40 @@ class XiaohongshuParser {
 	 * @returns {Object} 小红书内容信息
 	 */
 	async parseUrl(shareUrl) {
-		console.log("开始解析小红书链接:", shareUrl)
-		
+		console.log('开始解析小红书链接:', shareUrl)
+
 		// 第一步：获取重定向后的真实链接
-		const shareResp = await axios.get(shareUrl, { 
+		const shareResp = await axios.get(shareUrl, {
 			headers: getRandomUA(),
 			maxRedirects: 5,
 			timeout: 10000
 		})
 		const realUrl = shareResp.request.res.responseUrl
-		console.log("重定向后的真实链接:", realUrl)
+		console.log('重定向后的真实链接:', realUrl)
 
 		// 从真实链接中提取笔记ID
-		let noteIdMatch = realUrl.match(/\/explore\/([a-zA-Z0-9]+)/) || 
-						  realUrl.match(/\/discovery\/item\/([a-zA-Z0-9]+)/) ||
-						  realUrl.match(/\/note\/([a-zA-Z0-9]+)/)
-		
+		let noteIdMatch =
+			realUrl.match(/\/explore\/([a-zA-Z0-9]+)/) ||
+			realUrl.match(/\/discovery\/item\/([a-zA-Z0-9]+)/) ||
+			realUrl.match(/\/note\/([a-zA-Z0-9]+)/)
+
 		if (!noteIdMatch) {
 			throw new Error('无法从链接中提取笔记ID')
 		}
 		const noteId = noteIdMatch[1]
-		console.log("提取到的笔记ID:", noteId)
+		console.log('提取到的笔记ID:', noteId)
 
 		// 第二步：获取页面内容并解析数据
-		const pageResp = await axios.get(realUrl, { 
+		const pageResp = await axios.get(realUrl, {
 			headers: {
 				...getRandomUA(),
-				'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 				'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2'
 			}
 		})
 
 		const html = pageResp.data
-		
+
 		// 提取window.__INITIAL_STATE__数据
 		const scriptMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.*?})\s*<\/script>/s)
 		if (!scriptMatch) {
@@ -68,7 +69,7 @@ class XiaohongshuParser {
 		}
 
 		const noteData = noteDetailMap[noteId].note
-		console.log("获取到笔记数据:", noteData.title)
+		console.log('获取到笔记数据:', noteData.title)
 
 		// 解析笔记信息
 		return this.parseNoteData(noteData, noteId)
@@ -83,10 +84,10 @@ class XiaohongshuParser {
 	parseNoteData(noteData, noteId) {
 		const title = noteData.title || noteData.desc || `xiaohongshu_${noteId}`
 		const cleanTitle = title.replace(/[\\/:*?"<>|]/g, '_')
-		
+
 		// 判断内容类型（小红书主要是图文，视频较少）
 		const isVideo = noteData.type === 'video' || (noteData.video && noteData.video.media)
-		
+
 		let videoUrl = null
 		let coverImg = []
 		let allImg = []
@@ -105,10 +106,12 @@ class XiaohongshuParser {
 		} else {
 			// 图文类型
 			if (noteData.imageList && noteData.imageList.length > 0) {
-				allImg = noteData.imageList.map(img => {
-					// 优先使用默认尺寸图片
-					return img.urlDefault || img.urlPre || img.url
-				}).filter(Boolean)
+				allImg = noteData.imageList
+					.map((img) => {
+						// 优先使用默认尺寸图片
+						return img.urlDefault || img.urlPre || img.url
+					})
+					.filter(Boolean)
 			}
 		}
 
@@ -120,22 +123,30 @@ class XiaohongshuParser {
 				desc: noteData.desc || '', // 作品描述
 				type: isVideo ? 'video' : 'image', // 内容类型
 				cover: coverImg.length > 0 ? coverImg[0] : '', // 封面图
-				url_list: isVideo ? (videoUrl ? [videoUrl] : []) : allImg, // 视频/图集地址列表
+				url_list: isVideo ? (videoUrl ? [videoUrl] : []) : allImg // 视频/图集地址列表
 			},
 			// 作者信息
 			author: {
 				author_id: noteData.user ? noteData.user.userId : '', // 用户ID
 				nickname: noteData.user ? noteData.user.nickname : '未知用户', // 用户昵称
-				avatar: noteData.user ? noteData.user.avatar.replace(/w\/\d+/, 'w/720') : '',
+				avatar: noteData.user ? noteData.user.avatar.replace(/w\/\d+/, 'w/720') : ''
 			},
 			// 统计信息
 			statistics: {
-				digg_count: noteData.interactInfo ? parseInt(noteData.interactInfo.likedCount) || 0 : 0, // 点赞数
-				comment_count: noteData.interactInfo ? parseInt(noteData.interactInfo.commentCount) || 0 : 0, // 评论数
-				share_count: noteData.interactInfo ? parseInt(noteData.interactInfo.shareCount) || 0 : 0, // 分享数
-				collect_count: noteData.interactInfo ? parseInt(noteData.interactInfo.collectedCount) || 0 : 0, // 收藏数
+				digg_count: noteData.interactInfo
+					? parseInt(noteData.interactInfo.likedCount) || 0
+					: 0, // 点赞数
+				comment_count: noteData.interactInfo
+					? parseInt(noteData.interactInfo.commentCount) || 0
+					: 0, // 评论数
+				share_count: noteData.interactInfo
+					? parseInt(noteData.interactInfo.shareCount) || 0
+					: 0, // 分享数
+				collect_count: noteData.interactInfo
+					? parseInt(noteData.interactInfo.collectedCount) || 0
+					: 0 // 收藏数
 			},
-			platform: 'xiaohongshu', // 平台标识
+			platform: 'xiaohongshu' // 平台标识
 		}
 	}
 }

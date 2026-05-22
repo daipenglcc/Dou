@@ -34,13 +34,13 @@ class PlatformProcessor {
 			throw new Error('未找到有效的分享链接')
 		}
 
-		console.log("提取到的链接:", urls)
+		console.log('提取到的链接:', urls)
 		const shareUrl = urls[0]
-		console.log("分享链接:", shareUrl)
+		console.log('分享链接:', shareUrl)
 
 		// 识别平台类型
 		const platform = this.detectPlatform(shareUrl)
-		console.log("识别到的平台:", platform)
+		console.log('识别到的平台:', platform)
 
 		// 获取对应平台的解析器
 		const parser = this.parsers[platform]
@@ -59,7 +59,7 @@ class PlatformProcessor {
 	 */
 	detectPlatform(url) {
 		const domain = url.toLowerCase()
-		
+
 		if (domain.includes('douyin.com') || domain.includes('v.douyin.com')) {
 			return 'douyin'
 		} else if (domain.includes('kuaishou.com') || domain.includes('v.kuaishou.com')) {
@@ -74,7 +74,6 @@ class PlatformProcessor {
 			return 'unknown'
 		}
 	}
-
 }
 
 module.exports = PlatformProcessor

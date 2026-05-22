@@ -29,7 +29,8 @@ class BilibiliParser {
 
 		// 第二步：提取 BV id
 		// 支持格式：/video/BVxxx 或 /BVxxx 或 bvid=BVxxx
-		const bvMatch = finalUrl.match(/\/video\/(BV[a-zA-Z0-9]+)/) ||
+		const bvMatch =
+			finalUrl.match(/\/video\/(BV[a-zA-Z0-9]+)/) ||
 			finalUrl.match(/[?&]bvid=(BV[a-zA-Z0-9]+)/)
 		if (!bvMatch) {
 			throw new Error('无法从链接中提取视频ID')
@@ -42,7 +43,7 @@ class BilibiliParser {
 		const pageResp = await axios.get(mobileUrl, {
 			headers: {
 				'User-Agent': getRandomUA(),
-				'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 				'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2'
 			},
 			timeout: 15000
@@ -130,7 +131,7 @@ class BilibiliParser {
 					},
 					headers: {
 						'User-Agent': getRandomUA(),
-						'Referer': 'https://www.bilibili.com'
+						Referer: 'https://www.bilibili.com'
 					},
 					timeout: 10000
 				})
@@ -140,7 +141,7 @@ class BilibiliParser {
 
 				// durl 模式：直接包含视频 URL
 				if (data.data.durl?.length) {
-					return data.data.durl.map(d => d.url)
+					return data.data.durl.map((d) => d.url)
 				}
 
 				// dash 模式：合并视频+音频最高码率流

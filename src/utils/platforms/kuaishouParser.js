@@ -34,7 +34,7 @@ class KuaishouParser {
 		const pageResp = await axios.get(realUrl, {
 			headers: {
 				'User-Agent': getRandomUA(),
-				'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 				'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2'
 			},
 			timeout: 15000
@@ -146,9 +146,10 @@ class KuaishouParser {
 		const author = {
 			author_id: photoData.userId ? String(photoData.userId) : '',
 			nickname: photoData.userName || '未知用户',
-			avatar: photoData.headUrls && photoData.headUrls.length > 0
-				? photoData.headUrls[0].url
-				: (photoData.headUrl || '')
+			avatar:
+				photoData.headUrls && photoData.headUrls.length > 0
+					? photoData.headUrls[0].url
+					: photoData.headUrl || ''
 		}
 
 		// 统计信息

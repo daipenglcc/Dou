@@ -2,8 +2,13 @@ const axios = require('axios')
 const Router = require('koa-router')
 const PlatformProcessor = require('../utils/platformProcessor')
 const path = require('path')
+const { getPool } = require('../utils/db')
 
 const router = new Router()
+
+// 微信小程序配置
+const WX_APP_ID = 'wx5030420cb6d74ebf'
+const WX_APP_SECRET = 'f01fd311245f8c13f1c065c95ad19528'
 
 /**
  * 将 URL 包装为代理地址
@@ -20,13 +25,13 @@ function wrapUrlsWithProxy(data, base) {
 	if (!data || typeof data !== 'object') return
 
 	if (Array.isArray(data)) {
-		data.forEach(item => wrapUrlsWithProxy(item, base))
+		data.forEach((item) => wrapUrlsWithProxy(item, base))
 		return
 	}
 
 	for (const key of Object.keys(data)) {
 		if (key === 'url_list' && Array.isArray(data[key])) {
-			data[key] = data[key].map(u => wrapProxy(u, base))
+			data[key] = data[key].map((u) => wrapProxy(u, base))
 		} else if (key === 'cover' && typeof data[key] === 'string') {
 			data[key] = wrapProxy(data[key], base)
 		} else if (typeof data[key] === 'object') {
@@ -70,7 +75,7 @@ async function getFileSize(url) {
 }
 
 router.post('/parse', async (ctx) => {
-	const { shareLink, shareText } = ctx.request.body
+	const { shareLink, shareText, openid } = ctx.request.body
 
 	if (!shareLink && !shareText) {
 		ctx.status = 400
@@ -90,9 +95,30 @@ router.post('/parse', async (ctx) => {
 		// 获取文件大小（视频和图片类型）
 		if (videoInfo.project?.url_list) {
 			const sizes = await Promise.all(
-				videoInfo.project.url_list.map(url => getFileSize(url))
+				videoInfo.project.url_list.map((url) => getFileSize(url))
 			)
 			videoInfo.project.size_list = sizes
+		}
+
+		// 如果提供了 openid，记录到数据库
+		if (openid) {
+			try {
+				const pool = getPool()
+				if (pool) {
+					// 尝试提取视频标题或者描述
+					const title = videoInfo.project?.title || videoInfo.project?.desc || ''
+					const platform = videoInfo.platform || 'unknown'
+					const mediaType = videoInfo.project?.type || 'unknown'
+
+					await pool.query(
+						'INSERT INTO parse_records (openid, platform, media_type, url, title) VALUES (?, ?, ?, ?, ?)',
+						[openid, platform, mediaType, inputText, title]
+					)
+				}
+			} catch (dbError) {
+				console.error('Failed to insert parse record:', dbError.message)
+				// 不阻断正常解析返回
+			}
 		}
 
 		// 将 cover 和 url_list 中的原始链接包装为同源代理地址
@@ -194,6 +220,87 @@ router.get('/proxyFile', async (ctx) => {
 		console.error('Proxy file error:', error.message)
 		ctx.status = 500
 		ctx.body = { success: false, error: '代理下载失败' }
+	}
+})
+
+/**
+ * GET /api/wechat/login
+ * 微信小程序 code 转 openid
+ *
+ * @route GET /api/wechat/login
+ * @param {Object} ctx.query - 查询参数
+ * @param {string} ctx.query.code - 小程序登录时获取的 code
+ */
+router.get('/wechat/login', async (ctx) => {
+	const { code } = ctx.query
+	if (!code) {
+		ctx.status = 400
+		ctx.body = { success: false, error: '缺少 code 参数' }
+		return
+	}
+
+	try {
+		const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${WX_APP_ID}&secret=${WX_APP_SECRET}&js_code=${code}&grant_type=authorization_code`
+		const response = await axios.get(url)
+		const data = response.data
+
+		if (data.errcode) {
+			ctx.status = 400
+			ctx.body = { success: false, error: data.errmsg }
+		} else {
+			ctx.body = {
+				success: true,
+				data: {
+					openid: data.openid,
+					session_key: data.session_key
+				}
+			}
+		}
+	} catch (error) {
+		console.error('WeChat login error:', error.message)
+		ctx.status = 500
+		ctx.body = { success: false, error: '获取 openid 失败' }
+	}
+})
+
+/**
+ * GET /api/records
+ * 获取用户的解析记录
+ *
+ * @route GET /api/records
+ * @param {Object} ctx.query - 查询参数
+ * @param {string} ctx.query.openid - 用户的 openid
+ */
+router.get('/records', async (ctx) => {
+	const { openid } = ctx.query
+	if (!openid) {
+		ctx.status = 400
+		ctx.body = { success: false, error: '缺少 openid 参数' }
+		return
+	}
+
+	try {
+		const pool = getPool()
+		if (!pool) {
+			ctx.status = 500
+			ctx.body = { success: false, error: '数据库未连接' }
+			return
+		}
+
+		const [rows] = await pool.query(
+			'SELECT * FROM parse_records WHERE openid = ? ORDER BY created_at DESC',
+			[openid]
+		)
+
+		ctx.body = {
+			success: true,
+			data: rows,
+			message: '获取成功'
+		}
+	} catch (error) {
+		console.error('Failed to get records:', error.message)
+		ctx.status = 500
+		ctx.body = { success: false, error: '获取记录失败' }
 	}
 })
 

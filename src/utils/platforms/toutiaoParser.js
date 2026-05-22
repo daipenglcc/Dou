@@ -18,18 +18,15 @@ class ToutiaoParser {
 				maxRedirects: 5,
 				timeout: 10000
 			})
-			finalUrl = shareResp.request.res.responseUrl || (
-				shareResp.request.protocol + '//' +
-				shareResp.request.host +
-				shareResp.request.path
-			)
+			finalUrl =
+				shareResp.request.res.responseUrl ||
+				shareResp.request.protocol + '//' + shareResp.request.host + shareResp.request.path
 		} catch (e) {
+			console.error('Failed to resolve redirect:', e.message)
 		}
 		console.log('最终链接:', finalUrl)
 
-		const idMatch =
-			finalUrl.match(/\/video\/(\d+)/) ||
-			finalUrl.match(/\/a(\d+)\//)
+		const idMatch = finalUrl.match(/\/video\/(\d+)/) || finalUrl.match(/\/a(\d+)\//)
 		if (!idMatch) {
 			throw new Error('无法从链接中提取视频ID')
 		}
@@ -38,8 +35,9 @@ class ToutiaoParser {
 
 		const pageResp = await axios.get(finalUrl, {
 			headers: {
-				'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-				'Accept': 'text/html,application/xhtml+xml'
+				'User-Agent':
+					'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+				Accept: 'text/html,application/xhtml+xml'
 			},
 			timeout: 15000
 		})
@@ -55,9 +53,11 @@ class ToutiaoParser {
 			throw new Error('暂不支持解析文章类型内容，仅支持视频')
 		}
 
-		const title = (ldData.name || `toutiao_${itemId}`).replace(/ - 今日头条$/, '').replace(/[\\/:*?"<>|]/g, '_')
-		const cover = (ldData.thumbnailUrl?.[0] || '')
-		const desc = (ldData.description || '')
+		const title = (ldData.name || `toutiao_${itemId}`)
+			.replace(/ - 今日头条$/, '')
+			.replace(/[\\/:*?"<>|]/g, '_')
+		const cover = ldData.thumbnailUrl?.[0] || ''
+		const desc = ldData.description || ''
 		const durationStr = ldData.duration || 'PT0S'
 		const duration = this.parseDuration(durationStr)
 		const viewCount = ldData.interactionStatistic?.userInteractionCount || 0

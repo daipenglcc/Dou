@@ -5,9 +5,14 @@ const views = require('koa-views')
 const path = require('path')
 const videoRouter = require('./routes/video')
 
+const { initDB } = require('./utils/db')
+
 const app = new Koa()
 app.proxy = true
 const router = new Router()
+
+// 初始化数据库
+initDB()
 
 // 配置模板引擎
 app.use(

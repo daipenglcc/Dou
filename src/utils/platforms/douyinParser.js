@@ -13,11 +13,11 @@ class DouyinParser {
 	async parseUrl(shareUrl) {
 		const shareResp = await axios.get(shareUrl, { headers: getRandomUA() })
 		const realUrl = shareResp.request.res.responseUrl
-		console.log("重定向后的真实链接:", realUrl)
+		console.log('重定向后的真实链接:', realUrl)
 
 		const videoId = realUrl.split('?')[0].split('/').filter(Boolean).pop()
 		const finalUrl = `https://www.iesdouyin.com/share/video/${videoId}`
-		console.log("构造的标准链接:", finalUrl, "视频ID:", videoId)
+		console.log('构造的标准链接:', finalUrl, '视频ID:', videoId)
 
 		// 获取页面
 		const resp = await axios.get(finalUrl, { headers: getRandomUA() })
@@ -45,7 +45,7 @@ class DouyinParser {
 		delete data.risk_infos
 		delete data.mix_info
 		delete data.music
-		console.log("data",data) // 打印视频信息
+		console.log('data', data) // 打印视频信息
 		const aweme_type = data.aweme_type // 2:图文 4:视频
 		let videoUrl, coverImg, allImg, desc
 
@@ -71,22 +71,25 @@ class DouyinParser {
 				desc: '', // 作品描述（抖音无独立desc字段）
 				type: aweme_type === 4 ? 'video' : 'image', // 内容类型
 				cover: coverImg ? coverImg[0] : '', // 封面图
-				url_list: aweme_type === 4 ? [videoUrl] : allImg, // 视频/图集地址列表
+				url_list: aweme_type === 4 ? [videoUrl] : allImg // 视频/图集地址列表
 			},
 			// 作者信息
 			author: {
 				author_id: data.author.short_id, // 用户抖音号
 				nickname: data.author.nickname, // 用户昵称
-				avatar: data.author.avatar_thumb.url_list[0].replace(/\/aweme\/\d+x\d+\//, '/aweme/720x720/'), // 用户头像
+				avatar: data.author.avatar_thumb.url_list[0].replace(
+					/\/aweme\/\d+x\d+\//,
+					'/aweme/720x720/'
+				) // 用户头像
 			},
 			// 统计信息
 			statistics: {
 				digg_count: data.statistics.digg_count, // 点赞数
 				comment_count: data.statistics.comment_count, // 评论数
 				share_count: data.statistics.share_count, // 分享数
-				collect_count: data.statistics.collect_count, // 收藏数
+				collect_count: data.statistics.collect_count // 收藏数
 			},
-			platform: 'douyin', // 平台标识
+			platform: 'douyin' // 平台标识
 		}
 	}
 }
