@@ -6,7 +6,8 @@ const dbConfig = {
 	host: isProd ? '10.34.112.115' : 'sh-cynosdbmysql-grp-h10adil8.sql.tencentcdb.com',
 	port: isProd ? 3306 : 29922,
 	user: 'root',
-	password: 'QhLcnFGrpFjfzL5'
+	password: 'QhLcnFGrpFjfzL5',
+	timezone: '+08:00'
 }
 
 const DATABASE_NAME = 'douyin_app'

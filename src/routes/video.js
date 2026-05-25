@@ -111,8 +111,8 @@ router.post('/parse', async (ctx) => {
 					const mediaType = videoInfo.project?.type || 'unknown'
 
 					await pool.query(
-						'INSERT INTO parse_records (openid, platform, media_type, url, title) VALUES (?, ?, ?, ?, ?)',
-						[openid, platform, mediaType, inputText, title]
+						'INSERT INTO parse_records (openid, platform, media_type, url, title, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+						[openid, platform, mediaType, inputText, title, new Date()]
 					)
 				}
 			} catch (dbError) {
