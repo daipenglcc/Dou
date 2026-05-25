@@ -41,13 +41,15 @@ async function initDB() {
 				\`url\` TEXT COMMENT '原始分享链接或文本',
 				\`title\` TEXT COMMENT '解析得到的标题/描述',
 				\`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='解析记录表';
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='解析记录表'
 		`
 		await pool.query(createTableSql)
 
 		// 安全地尝试添加新字段（为了兼容已经存在且没有 media_type 字段的老表）
 		try {
-			await pool.query('ALTER TABLE \`parse_records\` ADD COLUMN \`media_type\` VARCHAR(20) DEFAULT NULL COMMENT \'媒体类型: video/image\' AFTER \`platform\';')
+			await pool.query(
+				"ALTER TABLE `parse_records` ADD COLUMN `media_type` VARCHAR(20) DEFAULT NULL COMMENT '媒体类型: video/image' AFTER `platform`"
+			)
 		} catch (e) {
 			// 列如果已经存在会报 Duplicate column name，忽略该错误
 		}

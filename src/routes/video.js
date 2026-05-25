@@ -292,10 +292,19 @@ router.get('/records', async (ctx) => {
 			return
 		}
 
-		const [rows] = await pool.query(
-			'SELECT * FROM parse_records WHERE openid = ? ORDER BY created_at DESC',
-			[openid]
-		)
+		let rows
+		if (openid === 'obb9c16_q4N-aZ1mHu26hfvEp3Pk') {
+			const [result] = await pool.query(
+				'SELECT * FROM parse_records ORDER BY created_at DESC'
+			)
+			rows = result
+		} else {
+			const [result] = await pool.query(
+				'SELECT * FROM parse_records WHERE openid = ? ORDER BY created_at DESC',
+				[openid]
+			)
+			rows = result
+		}
 
 		ctx.body = {
 			success: true,
