@@ -29,7 +29,9 @@ async function initDB() {
 			database: DATABASE_NAME,
 			waitForConnections: true,
 			connectionLimit: 10,
-			queueLimit: 0
+			queueLimit: 0,
+			enableKeepAlive: true,
+			keepAliveInitialDelay: 10000
 		})
 
 		// 3. 自动建表 parse_records
