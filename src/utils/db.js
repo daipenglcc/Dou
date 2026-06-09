@@ -3,8 +3,8 @@ const mysql = require('mysql2/promise')
 const isProd = process.env.NODE_ENV === 'production'
 
 const dbConfig = {
-	host: isProd ? '10.34.112.115' : 'sh-cynosdbmysql-grp-h10adil8.sql.tencentcdb.com',
-	port: isProd ? 3306 : 29922,
+	host: isProd ? '10.46.103.108' : 'sh-cynosdbmysql-grp-hw2e4q6w.sql.tencentcdb.com',
+	port: isProd ? 3306 : 28027,
 	user: 'root',
 	password: 'QhLcnFGrpFjfzL5',
 	timezone: '+08:00'
