@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "dbhub": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@bytebase/dbhub@latest",
+        "--transport", "stdio",
+        "--dsn", "mysql://root:QhLcnFGrpFjfzL5@sh-cynosdbmysql-grp-hw2e4q6w.sql.tencentcdb.com:28027/douyin_app"
+      ]
+    }
+  }
+}
