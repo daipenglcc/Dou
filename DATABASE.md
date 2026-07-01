@@ -145,3 +145,24 @@ mv douyin-2026-07-01.db data/douyin.db
 
 - `src/utils/db.js` — 导出 `initDB()`、`getPool()` 和 `getDB()`，接口兼容原 MySQL
 - `src/utils/backup.js` — 数据库邮件备份，通过 `node-cron` 定时调度
+
+## 备选方案
+
+### Prisma
+
+Node.js 数据库 ORM，用代码定义模型、自动生成迁移、类型安全的查询 API。
+
+```js
+// 定义模型 (schema.prisma)
+model ParseRecord {
+  id         Int      @id @default(autoincrement())
+  openid     String
+  platform   String?
+  // ...
+}
+
+// 查询
+const records = await prisma.parseRecord.findMany()
+```
+
+**当前项目不用**，只有一张表，`better-sqlite3` 直接写 SQL 更轻量。如果以后表多、字段变更频繁、多人协作，再迁移到 Prisma。

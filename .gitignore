@@ -9,5 +9,6 @@ downloads/
 # Claude Code
 .claude
 
-# SQLite database
-data/
+# SQLite WAL 临时文件
+*.db-wal
+*.db-shm
