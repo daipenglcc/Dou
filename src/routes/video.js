@@ -111,7 +111,8 @@ router.post('/parse', async (ctx) => {
 					const platform = videoInfo.platform || 'unknown'
 					const mediaType = videoInfo.project?.type || 'unknown'
 
-					const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
+					// 北京时间 (UTC+8)
+const now = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 19).replace('T', ' ')
 					await pool.query(
 						'INSERT INTO parse_records (openid, platform, media_type, url, title, created_at) VALUES (?, ?, ?, ?, ?, ?)',
 						[openid, platform, mediaType, inputText, title, now]
