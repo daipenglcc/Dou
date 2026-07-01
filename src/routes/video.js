@@ -2,7 +2,7 @@ const axios = require('axios')
 const Router = require('koa-router')
 const PlatformProcessor = require('../utils/platformProcessor')
 const path = require('path')
-const { getPool } = require('../utils/db')
+const { getPool, getDB } = require('../utils/db')
 
 const router = new Router()
 
@@ -315,6 +315,108 @@ router.get('/records', async (ctx) => {
 		console.error('Failed to get records:', error.message)
 		ctx.status = 500
 		ctx.body = { success: false, error: '获取记录失败' }
+	}
+})
+
+// 数据库查询页面
+router.get('/db', async (ctx) => {
+	ctx.type = 'html'
+	ctx.body = `<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DB Query</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font: 14px/1.5 system-ui, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+h2 { color: #e94560; margin-bottom: 12px; }
+textarea { width: 100%; height: 80px; background: #16213e; color: #eee; border: 1px solid #0f3460; border-radius: 6px; padding: 10px; font: 14px monospace; resize: vertical; }
+.btns { margin: 8px 0 16px; display: flex; gap: 10px; }
+button { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.btn-run { background: #e94560; color: #fff; }
+.btn-clear { background: #0f3460; color: #ccc; }
+.error { background: #522; color: #f99; padding: 10px; border-radius: 6px; margin-bottom: 12px; white-space: pre-wrap; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #0f3460; padding: 8px 10px; text-align: left; position: sticky; top: 0; }
+td { padding: 6px 10px; border-bottom: 1px solid #16213e; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+tr:hover td { background: #16213e; }
+.result-wrap { max-height: 70vh; overflow: auto; border: 1px solid #0f3460; border-radius: 6px; }
+.info { color: #888; margin-bottom: 8px; }
+a { color: #e94560; }
+</style>
+</head>
+<body>
+<h2>📊 douyin_app</h2>
+<textarea id="sql" placeholder="SELECT * FROM parse_records ORDER BY id DESC LIMIT 20">SELECT * FROM parse_records ORDER BY id DESC LIMIT 20</textarea>
+<div class="btns">
+<button class="btn-run" onclick="run()">Run (Cmd/Ctrl+Enter)</button>
+<button class="btn-clear" onclick="clearAll()">Clear</button>
+</div>
+<div id="info" class="info"></div>
+<div id="error"></div>
+<div class="result-wrap"><table id="result"></table></div>
+<script>
+const sqlEl = document.getElementById('sql')
+const resultEl = document.getElementById('result')
+const errorEl = document.getElementById('error')
+const infoEl = document.getElementById('info')
+
+sqlEl.addEventListener('keydown', e => { if ((e.metaKey||e.ctrlKey) && e.key==='Enter') run() })
+
+async function run() {
+  errorEl.textContent = ''
+  infoEl.textContent = ''
+  resultEl.innerHTML = ''
+  const sql = sqlEl.value.trim()
+  if (!sql) return
+  try {
+    const res = await fetch('/api/db/query', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({sql}) })
+    const data = await res.json()
+    if (data.error) { errorEl.textContent = data.error; return }
+    if (!data.rows.length) { infoEl.textContent = '0 rows'; return }
+    infoEl.textContent = data.rows.length + ' row(s)'
+    let html = '<thead><tr>'
+    data.columns.forEach(c => html += '<th>'+esc(c)+'</th>')
+    html += '</tr></thead><tbody>'
+    data.rows.forEach(row => {
+      html += '<tr>'
+      data.columns.forEach(c => { const v = row[c]; html += '<td title="'+esc(String(v??''))+'">'+esc(v===null?'NULL':String(v))+'</td>' })
+      html += '</tr>'
+    })
+    html += '</tbody>'
+    resultEl.innerHTML = html
+  } catch(e) { errorEl.textContent = e.message }
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function clearAll() { errorEl.textContent=''; infoEl.textContent=''; resultEl.innerHTML='' }
+</script>
+</body>
+</html>`
+})
+
+// 执行 SQL 查询
+router.post('/db/query', async (ctx) => {
+	const { sql } = ctx.request.body
+	if (!sql) { ctx.body = { error: '缺少 sql 参数' }; return }
+
+	const db = getDB()
+	if (!db) { ctx.body = { error: '数据库未连接' }; return }
+
+	try {
+		// 只允许读操作
+		const trimmed = sql.trim().toUpperCase()
+		if (!trimmed.startsWith('SELECT') && !trimmed.startsWith('PRAGMA') && !trimmed.startsWith('EXPLAIN')) {
+			ctx.body = { error: '仅允许 SELECT / PRAGMA / EXPLAIN 查询' }
+			return
+		}
+
+		const stmt = db.prepare(sql)
+		const rows = stmt.all()
+		const columns = rows.length > 0 ? Object.keys(rows[0]) : []
+		ctx.body = { columns, rows }
+	} catch (e) {
+		ctx.body = { error: e.message }
 	}
 })
 

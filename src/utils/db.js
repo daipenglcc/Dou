@@ -1,69 +1,64 @@
-const mysql = require('mysql2/promise')
+const Database = require('better-sqlite3')
+const path = require('path')
 
-const isProd = process.env.NODE_ENV === 'production'
+const DB_PATH = path.join(__dirname, '..', '..', 'data', 'douyin.db')
 
-const dbConfig = {
-	host: isProd ? '10.7.102.92' : 'sh-cynosdbmysql-grp-o5wns1x8.sql.tencentcdb.com',
-	port: isProd ? 3306 : 27269,
-	user: 'root',
-	password: 'QhLcnFGrpFjfzL5',
-	timezone: '+08:00'
-}
-
-const DATABASE_NAME = 'douyin_app'
-
-let pool = null
+let db = null
 
 async function initDB() {
 	try {
-		// 1. 创建没有指定数据库的连接，用于创建数据库（如果不存在）
-		const connection = await mysql.createConnection(dbConfig)
-		await connection.query(
-			`CREATE DATABASE IF NOT EXISTS \`${DATABASE_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
-		)
-		await connection.end()
-
-		// 2. 创建连接池，连接到特定数据库
-		pool = mysql.createPool({
-			...dbConfig,
-			database: DATABASE_NAME,
-			waitForConnections: true,
-			connectionLimit: 10,
-			queueLimit: 0,
-			enableKeepAlive: true,
-			keepAliveInitialDelay: 10000
-		})
-
-		// 3. 自动建表 parse_records
-		const createTableSql = `
-			CREATE TABLE IF NOT EXISTS \`parse_records\` (
-				\`id\` INT AUTO_INCREMENT PRIMARY KEY,
-				\`openid\` VARCHAR(100) NOT NULL COMMENT '微信用户唯一标识',
-				\`platform\` VARCHAR(50) DEFAULT NULL COMMENT '解析平台',
-				\`media_type\` VARCHAR(20) DEFAULT NULL COMMENT '媒体类型: video/image',
-				\`url\` TEXT COMMENT '原始分享链接或文本',
-				\`title\` TEXT COMMENT '解析得到的标题/描述',
-				\`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='解析记录表'
-		`
-		await pool.query(createTableSql)
-
-		// 安全地尝试添加新字段（为了兼容已经存在且没有 media_type 字段的老表）
-		try {
-			await pool.query(
-				"ALTER TABLE `parse_records` ADD COLUMN `media_type` VARCHAR(20) DEFAULT NULL COMMENT '媒体类型: video/image' AFTER `platform`"
-			)
-		} catch (e) {
-			// 列如果已经存在会报 Duplicate column name，忽略该错误
+		const fs = require('fs')
+		const dir = path.dirname(DB_PATH)
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true })
 		}
 
-		console.log('Database initialized and parse_records table is ready.')
+		db = new Database(DB_PATH)
+		// WAL mode for better concurrent read performance
+		db.pragma('journal_mode = WAL')
+
+		db.exec(`
+			CREATE TABLE IF NOT EXISTS parse_records (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				openid VARCHAR(100) NOT NULL,
+				platform VARCHAR(50) DEFAULT NULL,
+				media_type VARCHAR(20) DEFAULT NULL,
+				url TEXT,
+				title TEXT,
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			)
+		`)
+
+		console.log('SQLite database initialized:', DB_PATH)
 	} catch (error) {
-		console.error('Failed to initialize database:', error)
+		console.error('Failed to initialize SQLite database:', error)
+		throw error
 	}
+}
+
+// pony: return async wrapper so existing callers (pool.query with await) work unchanged
+function getPool() {
+	if (!db) return null
+	return {
+		query(sql, params = []) {
+			const isSelect = sql.trim().toUpperCase().startsWith('SELECT')
+			if (isSelect) {
+				const stmt = db.prepare(sql)
+				return [stmt.all(...(Array.isArray(params) ? params : [params]))]
+			} else {
+				const stmt = db.prepare(sql)
+				return [stmt.run(...(Array.isArray(params) ? params : [params]))]
+			}
+		}
+	}
+}
+
+function getDB() {
+	return db
 }
 
 module.exports = {
 	initDB,
-	getPool: () => pool
+	getPool,
+	getDB
 }

@@ -7,6 +7,9 @@ WORKDIR /app
 # 使用速度更快的国内镜像源
 RUN npm config set registry https://registry.npmmirror.com
 
+# better-sqlite3 编译依赖
+RUN apk add --no-cache python3 make g++
+
 # 将这些文件拷贝到容器中
 COPY package.json package-lock.json ./
 

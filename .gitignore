@@ -8,3 +8,6 @@ downloads/
 
 # Claude Code
 .claude
+
+# SQLite database
+data/
