@@ -89,6 +89,16 @@ sqlite3 remote-data/douyin.db
 
 每天中午 12:00 通过邮件发送 `.db` 文件到 `youhuabujianye@gmail.com`。
 
+### 部署时保留数据
+
+由于使用 SQLite（文件数据库），每次 Docker 重新部署容器内的数据会丢失。部署前先拉取最新数据：
+
+1. 访问服务器 `/api/db` 页面，点「📧 备份」
+2. 从邮箱下载附件，放到本地项目 `data/douyin.db`
+3. 重新 build & 部署
+
+这样服务器数据不会丢。
+
 ### 邮箱配置
 
 SMTP 凭证已内置（QQ 邮箱），无需额外配置。
