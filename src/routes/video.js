@@ -3,6 +3,7 @@ const Router = require('koa-router')
 const PlatformProcessor = require('../utils/platformProcessor')
 const path = require('path')
 const { getPool, getDB } = require('../utils/db')
+const { backup } = require('../utils/backup')
 
 const router = new Router()
 
@@ -336,6 +337,7 @@ textarea { width: 100%; height: 80px; background: #16213e; color: #eee; border: 
 button { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
 .btn-run { background: #e94560; color: #fff; }
 .btn-clear { background: #0f3460; color: #ccc; }
+.btn-backup { background: #16213e; color: #e94560; }
 .error { background: #522; color: #f99; padding: 10px; border-radius: 6px; margin-bottom: 12px; white-space: pre-wrap; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { background: #0f3460; padding: 8px 10px; text-align: left; position: sticky; top: 0; }
@@ -352,6 +354,7 @@ a { color: #e94560; }
 <div class="btns">
 <button class="btn-run" onclick="run()">Run (Cmd/Ctrl+Enter)</button>
 <button class="btn-clear" onclick="clearAll()">Clear</button>
+<button class="btn-backup" onclick="sendBackup()">📧 备份</button>
 </div>
 <div id="info" class="info"></div>
 <div id="error"></div>
@@ -390,6 +393,15 @@ async function run() {
 }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
 function clearAll() { errorEl.textContent=''; infoEl.textContent=''; resultEl.innerHTML='' }
+async function sendBackup() {
+  infoEl.textContent='发送中...'
+  try {
+    const res = await fetch('/api/db/backup', { method:'POST' })
+    const data = await res.json()
+    if (data.error) { errorEl.textContent = data.error }
+    else { infoEl.textContent = data.message }
+  } catch(e) { errorEl.textContent = e.message }
+}
 </script>
 </body>
 </html>`
@@ -415,6 +427,16 @@ router.post('/db/query', async (ctx) => {
 		const rows = stmt.all()
 		const columns = rows.length > 0 ? Object.keys(rows[0]) : []
 		ctx.body = { columns, rows }
+	} catch (e) {
+		ctx.body = { error: e.message }
+	}
+})
+
+// 手动触发数据库备份
+router.post('/db/backup', async (ctx) => {
+	try {
+		await backup()
+		ctx.body = { success: true, message: '备份已发送' }
 	} catch (e) {
 		ctx.body = { error: e.message }
 	}

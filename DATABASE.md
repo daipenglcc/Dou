@@ -85,6 +85,53 @@ sshfs your-server:/app/data ./remote-data
 sqlite3 remote-data/douyin.db
 ```
 
+## 自动备份
+
+每天中午 12:00 通过邮件发送 `.db` 文件到 `youhuabujianye@gmail.com`。
+
+### 邮箱配置
+
+SMTP 凭证已内置（QQ 邮箱），无需额外配置。
+
+- 发件：2808707765@qq.com
+- 收件：youhuabujianye@gmail.com
+- 时间：每天中午 12:00，页面也有手动备份按钮
+
+## 从备份还原
+
+收到备份邮件后，下载附件恢复：
+
+### 服务器直接部署
+
+```bash
+# 把附件 douyin-YYYY-MM-DD.db 重命名放到服务器
+mv douyin-2026-07-01.db douyin.db
+mv douyin.db /app/data/douyin.db
+# 重启服务
+pm2 restart douyin
+```
+
+### Docker 部署
+
+```bash
+# scp 上传到服务器
+scp douyin-2026-07-01.db your-server:/tmp/douyin.db
+# 覆盖容器内的数据库文件
+docker cp /tmp/douyin.db douyin-app:/app/data/douyin.db
+# 重启
+docker restart douyin-app
+```
+
+### 本地开发
+
+```bash
+# 直接放到项目 data/ 目录
+mv douyin-2026-07-01.db data/douyin.db
+```
+- 收件：youhuabujianye@gmail.com
+- 时间：每天中午 12:00，页面也有手动备份按钮
+
 ## 模块
 
-`src/utils/db.js` — 导出 `initDB()`、`getPool()` 和 `getDB()`，接口兼容原 MySQL（`pool.query()` 返回 `[rows]`），上层调用代码无需改动。
+- `src/utils/db.js` — 导出 `initDB()`、`getPool()` 和 `getDB()`，接口兼容原 MySQL
+- `src/utils/backup.js` — 数据库邮件备份，通过 `node-cron` 定时调度

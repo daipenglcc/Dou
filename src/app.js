@@ -5,7 +5,9 @@ const views = require('koa-views')
 const path = require('path')
 const videoRouter = require('./routes/video')
 
+const cron = require('node-cron')
 const { initDB } = require('./utils/db')
+const { backup } = require('./utils/backup')
 
 const app = new Koa()
 app.proxy = true
@@ -13,6 +15,9 @@ const router = new Router()
 
 // 初始化数据库
 initDB()
+
+// 每天中午 12:00 备份数据库
+cron.schedule('0 12 * * *', () => backup().catch(e => console.error('[backup]', e.message)), { timezone: 'Asia/Shanghai' })
 
 // 配置模板引擎
 app.use(
