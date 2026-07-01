@@ -63,6 +63,9 @@ SQLite 是文件数据库，不像 MySQL 自带网络协议。需要通过服务
 http://<服务器IP>:7777/api/db
 ```
 
+- 本地：http://localhost:7777/api/db
+- 线上：https://douyin.vues.cn/api/db
+
 支持 SQL 查询，只读模式（仅允许 SELECT/PRAGMA/EXPLAIN），Cmd/Ctrl+Enter 快捷执行。
 
 ### SSH 上去看
