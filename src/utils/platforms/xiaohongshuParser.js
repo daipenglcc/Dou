@@ -12,6 +12,8 @@ class XiaohongshuParser {
 	 */
 	async parseUrl(shareUrl) {
 		console.log('开始解析小红书链接:', shareUrl)
+		
+		throw new Error('抱歉，小红书近期风控比较严，暂时没法解析啦，建议先试试其他平台~')
 
 		// 第一步：获取重定向后的真实链接
 		const shareResp = await axios.get(shareUrl, {
