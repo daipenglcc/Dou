@@ -6,6 +6,9 @@ const SPIDER_UA =
 const MOBILE_UA =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
 
+// 默认请求 Cookie 提升在线服务器云 IP 穿透成功率
+const DEFAULT_COOKIE = 's_v_web_id=verify_la123; msToken=123456'
+
 /**
  * 抖音平台解析器
  */
@@ -61,15 +64,16 @@ class DouyinParser {
 
 		let data = null
 
-		// 3. 策略 A: 请求 aweme/detail API (Spider UA)
-		const detailApiUrl = `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}`
+		// 3. 策略 A: 请求 aweme/detail API (带 aid=6383 & device_platform=webapp)
+		const detailApiUrl = `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}&aid=6383&device_platform=webapp`
 		console.log('[DouyinParser] 尝试策略 A: 请求 detail API:', detailApiUrl)
 
 		try {
 			const apiResp = await axios.get(detailApiUrl, {
 				headers: {
 					'User-Agent': SPIDER_UA,
-					Referer: 'https://www.douyin.com/'
+					Referer: 'https://www.douyin.com/',
+					Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
 				},
 				timeout: 8000
 			})
@@ -78,7 +82,9 @@ class DouyinParser {
 				data = apiResp.data.aweme_detail
 			} else {
 				const filterReason = apiResp.data?.filter_detail?.filter_reason || ''
-				console.log(`[DouyinParser] 策略 A API 返回空, filter_reason: "${filterReason}"`)
+				console.log(
+					`[DouyinParser] 策略 A API 未直接返回 aweme_detail, filter_reason: "${filterReason}"`
+				)
 				if (filterReason === 'images_base') {
 					console.log(
 						'[DouyinParser] 识别到 filter_reason="images_base"，确认该作品为图文作品!'
@@ -99,7 +105,10 @@ class DouyinParser {
 
 				try {
 					const resp = await axios.get(shareHtmlUrl, {
-						headers: { 'User-Agent': MOBILE_UA },
+						headers: {
+							'User-Agent': MOBILE_UA,
+							Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
+						},
 						timeout: 8000
 					})
 					const html = resp.data || ''
@@ -153,7 +162,11 @@ class DouyinParser {
 
 				try {
 					const resp = await axios.get(webUrl, {
-						headers: { 'User-Agent': SPIDER_UA },
+						headers: {
+							'User-Agent': SPIDER_UA,
+							Referer: 'https://www.douyin.com/',
+							Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
+						},
 						timeout: 8000
 					})
 					const html = resp.data || ''
