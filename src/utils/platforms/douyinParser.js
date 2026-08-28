@@ -3,13 +3,15 @@ const axios = require('axios')
 // 蜘蛛 User-Agent 用于绕过抖音 Web WAF 验证
 const SPIDER_UA =
 	'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)'
+const MOBILE_UA =
+	'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
 
 /**
  * 抖音平台解析器
  */
 class DouyinParser {
 	/**
-	 * 解析抖音分享链接
+	 * 解析抖音分享链接 (支持视频与图文/图集作品)
 	 * @param {string} shareUrl - 抖音分享链接
 	 * @returns {Object} 抖音视频/图集信息
 	 */
@@ -29,9 +31,10 @@ class DouyinParser {
 		}
 		console.log('[DouyinParser] 重定向后的真实链接:', realUrl)
 
-		// 2. 提取作品 ID (videoId / aweme_id)
+		// 2. 提取作品 ID 并判断作品类型（video 或 note 图文）
+		const isNoteUrl = realUrl.includes('/note/')
 		let videoId = null
-		const idMatch = realUrl.match(/(?:video|note|slides|share\/video)\/(\d+)/)
+		const idMatch = realUrl.match(/(?:video|note|slides|share\/video|share\/note)\/(\d+)/)
 		if (idMatch) {
 			videoId = idMatch[1]
 		} else {
@@ -50,110 +53,203 @@ class DouyinParser {
 			console.error('[DouyinParser] 无法从 URL 中提取作品 ID:', realUrl)
 			throw new Error(`无法提取抖音作品 ID: ${realUrl}`)
 		}
-		console.log('[DouyinParser] 成功提取作品 ID:', videoId)
+		console.log(
+			`[DouyinParser] 成功提取作品 ID: ${videoId}, 类型标识: ${
+				isNoteUrl ? 'note(图文)' : 'video(视频)'
+			}`
+		)
 
 		let data = null
 
-		// 3. 优先请求 aweme/detail API (使用 Spider UA)
-		const detailApiUrl = `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}`
-		console.log('[DouyinParser] 尝试请求 detail API:', detailApiUrl)
+		// 3. 策略 A: 若为普通视频，优先请求 aweme/detail API (Spider UA)
+		if (!isNoteUrl) {
+			const detailApiUrl = `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}`
+			console.log('[DouyinParser] 尝试策略 A: 请求 detail API:', detailApiUrl)
 
-		try {
-			const apiResp = await axios.get(detailApiUrl, {
-				headers: {
-					'User-Agent': SPIDER_UA,
-					Referer: 'https://www.douyin.com/'
-				},
-				timeout: 8000
-			})
-			console.log('[DouyinParser] detail API 响应状态:', apiResp.status)
-			if (apiResp.data && apiResp.data.aweme_detail) {
-				console.log('[DouyinParser] detail API 解析成功，获取到 aweme_detail 对象')
-				data = apiResp.data.aweme_detail
-			} else {
-				console.log(
-					'[DouyinParser] detail API 返回空或无 aweme_detail:',
-					JSON.stringify(apiResp.data || {}).slice(0, 200)
-				)
-			}
-		} catch (apiErr) {
-			console.error('[DouyinParser] detail API 请求异常:', apiErr.message)
-		}
-
-		// 4. 降级方案：获取 iesdouyin HTML 页面提取 _ROUTER_DATA
-		if (!data) {
-			console.log('[DouyinParser] 触发降级方案: 请求 iesdouyin HTML 页面...')
-			const finalUrl = `https://www.iesdouyin.com/share/video/${videoId}`
-			console.log('[DouyinParser] 请求 HTML URL:', finalUrl)
-
-			const resp = await axios.get(finalUrl, {
-				headers: { 'User-Agent': SPIDER_UA },
-				timeout: 8000
-			})
-			const html = resp.data || ''
-			console.log('[DouyinParser] HTML 长度:', html.length)
-
-			const regex = /window\._ROUTER_DATA\s*=\s*(.*?)<\/script>/s
-			const match = regex.exec(html)
-			if (!match) {
-				console.error(
-					'[DouyinParser] HTML 未能找到 window._ROUTER_DATA, 前 500 字符:',
-					html.slice(0, 500)
-				)
-				throw new Error('解析 HTML 获取视频信息失败')
-			}
-
-			console.log('[DouyinParser] 成功提取到 window._ROUTER_DATA')
-			const jsonData = JSON.parse(match[1].trim())
-			const loaderData = jsonData.loaderData || {}
-			console.log('[DouyinParser] loaderData keys:', Object.keys(loaderData))
-
-			let originalInfo
-			if (loaderData['video_(id)/page']) {
-				originalInfo = loaderData['video_(id)/page'].videoInfoRes
-			} else if (loaderData['note_(id)/page']) {
-				originalInfo = loaderData['note_(id)/page'].videoInfoRes
-			} else {
-				// 尝试其他包含 videoInfoRes 的 key
-				const pageKey = Object.keys(loaderData).find(
-					(k) => loaderData[k] && loaderData[k].videoInfoRes
-				)
-				if (pageKey) {
-					console.log(`[DouyinParser] 从 ${pageKey} 中匹配到 videoInfoRes`)
-					originalInfo = loaderData[pageKey].videoInfoRes
+			try {
+				const apiResp = await axios.get(detailApiUrl, {
+					headers: {
+						'User-Agent': SPIDER_UA,
+						Referer: 'https://www.douyin.com/'
+					},
+					timeout: 8000
+				})
+				if (apiResp.data && apiResp.data.aweme_detail) {
+					console.log('[DouyinParser] 策略 A 成功获取到 aweme_detail 对象')
+					data = apiResp.data.aweme_detail
+				} else {
+					console.log(
+						'[DouyinParser] 策略 A API 返回空:',
+						JSON.stringify(apiResp.data || {}).slice(0, 150)
+					)
 				}
+			} catch (apiErr) {
+				console.error('[DouyinParser] 策略 A 请求异常:', apiErr.message)
 			}
-
-			if (!originalInfo) {
-				console.error(
-					'[DouyinParser] originalInfo 为 undefined! loaderData 内容概览:',
-					JSON.stringify(loaderData, null, 2).slice(0, 1000)
-				)
-				throw new Error('未能找到视频或图集数据')
-			}
-
-			if (!Array.isArray(originalInfo.item_list) || originalInfo.item_list.length === 0) {
-				console.error(
-					'[DouyinParser] originalInfo.item_list 为空或不存在! videoInfoRes keys:',
-					Object.keys(originalInfo)
-				)
-				throw new Error('视频信息列表中无有效项 (item_list 缺失)')
-			}
-
-			data = originalInfo.item_list[0]
-			console.log('[DouyinParser] 成功从 HTML routerData 中提取 item_list[0]')
 		}
 
+		// 4. 策略 B: 尝试请求 iesdouyin 的 H5 Share 页面 (Mobile UA) 提取 _ROUTER_DATA
+		if (!data) {
+			const sharePath = isNoteUrl ? 'note' : 'video'
+			const shareHtmlUrl = `https://www.iesdouyin.com/share/${sharePath}/${videoId}`
+			console.log(`[DouyinParser] 尝试策略 B: 请求 H5 Share 页面 (${shareHtmlUrl})...`)
+
+			try {
+				const resp = await axios.get(shareHtmlUrl, {
+					headers: { 'User-Agent': MOBILE_UA },
+					timeout: 8000
+				})
+				const html = resp.data || ''
+				const regex = /window\._ROUTER_DATA\s*=\s*(.*?)<\/script>/s
+				const match = regex.exec(html)
+
+				if (match) {
+					const jsonData = JSON.parse(match[1].trim())
+					const loaderData = jsonData.loaderData || {}
+					console.log('[DouyinParser] 策略 B loaderData keys:', Object.keys(loaderData))
+
+					let originalInfo
+					if (loaderData['note_(id)/page']) {
+						originalInfo = loaderData['note_(id)/page'].videoInfoRes
+					} else if (loaderData['video_(id)/page']) {
+						originalInfo = loaderData['video_(id)/page'].videoInfoRes
+					} else {
+						const pageKey = Object.keys(loaderData).find(
+							(k) => loaderData[k] && loaderData[k].videoInfoRes
+						)
+						if (pageKey) originalInfo = loaderData[pageKey].videoInfoRes
+					}
+
+					if (
+						originalInfo &&
+						Array.isArray(originalInfo.item_list) &&
+						originalInfo.item_list.length > 0
+					) {
+						data = originalInfo.item_list[0]
+						console.log('[DouyinParser] 策略 B 成功从 _ROUTER_DATA 提取到 item_list[0]')
+					}
+				}
+			} catch (bErr) {
+				console.log('[DouyinParser] 策略 B 提取失败:', bErr.message)
+			}
+		}
+
+		// 5. 策略 C: 尝试请求 douyin.com Web 页面 (Spider UA) 提取 application/ld+json (Schema.org 结构数据)
+		if (!data) {
+			const webPath = isNoteUrl ? 'note' : 'video'
+			const webUrl = `https://www.douyin.com/${webPath}/${videoId}`
+			console.log(`[DouyinParser] 尝试策略 C: 从 Web 页面结构化数据提取 (${webUrl})...`)
+
+			try {
+				const resp = await axios.get(webUrl, {
+					headers: { 'User-Agent': SPIDER_UA },
+					timeout: 8000
+				})
+				const html = resp.data || ''
+				const jsonLdMatch = html.match(
+					/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
+				)
+
+				if (jsonLdMatch) {
+					for (const m of jsonLdMatch) {
+						const content = m
+							.replace(/<script[^>]*>/, '')
+							.replace(/<\/script>/, '')
+							.trim()
+						try {
+							const ldObj = JSON.parse(content)
+							if (ldObj['@type'] === 'article' || ldObj.image || ldObj.headline) {
+								console.log(
+									'[DouyinParser] 策略 C 成功匹配到 schema.org JSON-LD 数据'
+								)
+
+								const images = (
+									Array.isArray(ldObj.image) ? ldObj.image : [ldObj.image]
+								).filter(Boolean)
+								const authorObj = ldObj.author || {}
+
+								let diggCount = 0
+								let collectCount = 0
+								let shareCount = 0
+								let commentCount = 0
+
+								if (Array.isArray(ldObj.interactionStatistic)) {
+									ldObj.interactionStatistic.forEach((item) => {
+										const type = item.interactionType?.['@type'] || ''
+										const count = item.userInteractionCount || 0
+										if (type.includes('Like')) diggCount = count
+										else if (type.includes('Share') || type.includes('Repost'))
+											shareCount = count
+									})
+								}
+								if (ldObj.collectCount) collectCount = ldObj.collectCount
+								if (ldObj.commentCount) commentCount = ldObj.commentCount
+
+								let authorId = ''
+								if (authorObj.url) {
+									authorId = authorObj.url.split('/').pop()
+								}
+
+								let title =
+									ldObj.headline || ldObj.description || `douyin_${videoId}`
+								title = title.replace(/[\\/:*?"<>|]/g, '_')
+
+								const resultObj = {
+									project: {
+										project_id: videoId,
+										title: title,
+										desc: '',
+										type: isNoteUrl || images.length > 0 ? 'image' : 'video',
+										cover: images[0] || '',
+										url_list: images
+									},
+									author: {
+										author_id: authorId,
+										nickname: authorObj.name || '未知用户',
+										avatar: authorObj.image || ''
+									},
+									statistics: {
+										digg_count: diggCount,
+										comment_count: commentCount,
+										share_count: shareCount,
+										collect_count: collectCount
+									},
+									platform: 'douyin'
+								}
+
+								console.log(
+									'[DouyinParser] 策略 C 解析完成:',
+									resultObj.project.title
+								)
+								return resultObj
+							}
+						} catch (e) {
+							// 忽略单个 JSON 解析异常
+						}
+					}
+				}
+			} catch (cErr) {
+				console.log('[DouyinParser] 策略 C 提取失败:', cErr.message)
+			}
+		}
+
+		if (!data) {
+			console.error(`[DouyinParser] 所有策略均未获取到有效数据 (videoId: ${videoId})`)
+			throw new Error(`未能找到抖音作品数据 (videoId: ${videoId})`)
+		}
+
+		// 格式化处理策略 A/B 得到的标准原始对象
 		delete data.cha_list
 		delete data.risk_infos
 		delete data.mix_info
 		delete data.music
 
 		console.log('[DouyinParser] 提取的原始作品字段 keys:', Object.keys(data))
-		const aweme_type = data.aweme_type // 0/4: 视频, 2/68: 图文
+		const aweme_type = data.aweme_type
 		console.log('[DouyinParser] aweme_type:', aweme_type)
 
 		const isImage =
+			isNoteUrl ||
 			aweme_type === 2 ||
 			aweme_type === 68 ||
 			(Array.isArray(data.images) && data.images.length > 0)
