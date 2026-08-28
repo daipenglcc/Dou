@@ -13,11 +13,17 @@ const app = new Koa()
 app.proxy = true
 const router = new Router()
 
-// 初始化数据库
-initDB()
+// 初始化数据库（容错处理，防止 Vercel 无文件写入权限时报错挂掉）
+initDB().catch((e) => console.error('[DB Init Warning]', e.message))
 
-// 每天中午 12:00 备份数据库
-cron.schedule('0 12 * * *', () => backup().catch(e => console.error('[backup]', e.message)), { timezone: 'Asia/Shanghai' })
+// 每天中午 12:00 备份数据库（仅限长服务环境）
+if (!process.env.VERCEL) {
+	cron.schedule(
+		'0 12 * * *',
+		() => backup().catch((e) => console.error('[backup]', e.message)),
+		{ timezone: 'Asia/Shanghai' }
+	)
+}
 
 // 配置模板引擎
 app.use(
@@ -40,10 +46,14 @@ router.use('/api', videoRouter.routes())
 app.use(router.routes())
 app.use(router.allowedMethods())
 
-const PORT = 7777
-const server = app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`)
-})
+if (process.env.VERCEL) {
+	module.exports = app.callback()
+} else {
+	const PORT = process.env.PORT || 7777
+	const server = app.listen(PORT, '0.0.0.0', () => {
+		console.log(`Server is running on port ${PORT}`)
+	})
+	server.setTimeout(10 * 60 * 1000)
+	module.exports = app
+}
 
-// 设置超时时间为 10 分钟（10 * 60 * 1000 毫秒）
-server.setTimeout(10 * 60 * 1000)
