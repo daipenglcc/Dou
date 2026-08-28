@@ -112,7 +112,10 @@ router.post('/parse', async (ctx) => {
 					const mediaType = videoInfo.project?.type || 'unknown'
 
 					// 北京时间 (UTC+8)
-const now = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 19).replace('T', ' ')
+					const now = new Date(Date.now() + 8 * 3600000)
+						.toISOString()
+						.slice(0, 19)
+						.replace('T', ' ')
 					await pool.query(
 						'INSERT INTO parse_records (openid, platform, media_type, url, title, created_at) VALUES (?, ?, ?, ?, ?, ?)',
 						[openid, platform, mediaType, inputText, title, now]
@@ -412,15 +415,25 @@ async function sendBackup() {
 // 执行 SQL 查询
 router.post('/db/query', async (ctx) => {
 	const { sql } = ctx.request.body
-	if (!sql) { ctx.body = { error: '缺少 sql 参数' }; return }
+	if (!sql) {
+		ctx.body = { error: '缺少 sql 参数' }
+		return
+	}
 
 	const db = getDB()
-	if (!db) { ctx.body = { error: '数据库未连接' }; return }
+	if (!db) {
+		ctx.body = { error: '数据库未连接' }
+		return
+	}
 
 	try {
 		// 只允许读操作
 		const trimmed = sql.trim().toUpperCase()
-		if (!trimmed.startsWith('SELECT') && !trimmed.startsWith('PRAGMA') && !trimmed.startsWith('EXPLAIN')) {
+		if (
+			!trimmed.startsWith('SELECT') &&
+			!trimmed.startsWith('PRAGMA') &&
+			!trimmed.startsWith('EXPLAIN')
+		) {
 			ctx.body = { error: '仅允许 SELECT / PRAGMA / EXPLAIN 查询' }
 			return
 		}

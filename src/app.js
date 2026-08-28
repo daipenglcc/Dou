@@ -18,11 +18,9 @@ initDB().catch((e) => console.error('[DB Init Warning]', e.message))
 
 // 每天中午 12:00 备份数据库（仅限长服务环境）
 if (!process.env.VERCEL) {
-	cron.schedule(
-		'0 12 * * *',
-		() => backup().catch((e) => console.error('[backup]', e.message)),
-		{ timezone: 'Asia/Shanghai' }
-	)
+	cron.schedule('0 12 * * *', () => backup().catch((e) => console.error('[backup]', e.message)), {
+		timezone: 'Asia/Shanghai'
+	})
 }
 
 // 配置模板引擎
@@ -56,4 +54,3 @@ if (process.env.VERCEL) {
 	server.setTimeout(10 * 60 * 1000)
 	module.exports = app
 }
-
