@@ -65,7 +65,7 @@ async function getFileSize(url) {
 			headers: {
 				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
 			},
-			timeout: 10 * 1000
+			timeout: 3 * 1000
 		})
 		const contentLength = response.headers['content-length']
 		return contentLength ? parseInt(contentLength, 10) : null
@@ -93,12 +93,18 @@ router.post('/parse', async (ctx) => {
 	try {
 		const videoInfo = await processor.parseShareUrl(inputText)
 
-		// 获取文件大小（视频和图片类型）
+		// 获取文件大小（仅针对视频获取大小，避免图集发送数十个 HEAD 请求导致接口超时）
 		if (videoInfo.project?.url_list) {
-			const sizes = await Promise.all(
-				videoInfo.project.url_list.map((url) => getFileSize(url))
-			)
-			videoInfo.project.size_list = sizes
+			if (videoInfo.project.type === 'video') {
+				const sizes = await Promise.all(
+					videoInfo.project.url_list.map((url) => getFileSize(url))
+				)
+				videoInfo.project.size_list = sizes
+			} else {
+				videoInfo.project.size_list = new Array(videoInfo.project.url_list.length).fill(
+					null
+				)
+			}
 		}
 
 		// 如果提供了 openid，记录到数据库
