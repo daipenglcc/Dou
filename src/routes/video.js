@@ -123,7 +123,7 @@ router.post('/parse', async (ctx) => {
 						.slice(0, 19)
 						.replace('T', ' ')
 					await pool.query(
-						'INSERT INTO parse_records (openid, platform, media_type, url, title, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+						'INSERT INTO parse_records (openid, platform, media_type, url, title, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
 						[openid, platform, mediaType, inputText, title, now]
 					)
 				}
@@ -306,16 +306,14 @@ router.get('/records', async (ctx) => {
 
 		let rows
 		if (openid === 'obb9c16_q4N-aZ1mHu26hfvEp3Pk') {
-			const [result] = await pool.query(
-				'SELECT * FROM parse_records ORDER BY created_at DESC'
-			)
-			rows = result
+			const result = await pool.query('SELECT * FROM parse_records ORDER BY created_at DESC')
+			rows = result.rows
 		} else {
-			const [result] = await pool.query(
-				'SELECT * FROM parse_records WHERE openid = ? ORDER BY created_at DESC',
+			const result = await pool.query(
+				'SELECT * FROM parse_records WHERE openid = $1 ORDER BY created_at DESC',
 				[openid]
 			)
-			rows = result
+			rows = result.rows
 		}
 
 		ctx.body = {
@@ -435,17 +433,13 @@ router.post('/db/query', async (ctx) => {
 	try {
 		// 只允许读操作
 		const trimmed = sql.trim().toUpperCase()
-		if (
-			!trimmed.startsWith('SELECT') &&
-			!trimmed.startsWith('PRAGMA') &&
-			!trimmed.startsWith('EXPLAIN')
-		) {
-			ctx.body = { error: '仅允许 SELECT / PRAGMA / EXPLAIN 查询' }
+		if (!trimmed.startsWith('SELECT') && !trimmed.startsWith('EXPLAIN')) {
+			ctx.body = { error: '仅允许 SELECT / EXPLAIN 查询' }
 			return
 		}
 
-		const stmt = db.prepare(sql)
-		const rows = stmt.all()
+		const result = await db.query(sql)
+		const rows = result.rows
 		const columns = rows.length > 0 ? Object.keys(rows[0]) : []
 		ctx.body = { columns, rows }
 	} catch (e) {

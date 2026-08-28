@@ -1,60 +1,55 @@
-const Database = require('better-sqlite3')
-const path = require('path')
+const { Pool } = require('pg')
 
-const DB_PATH = path.join(__dirname, '..', '..', 'data', 'douyin.db')
-
-let db = null
+let pool = null
 
 async function initDB() {
 	try {
-		const fs = require('fs')
-		const dir = path.dirname(DB_PATH)
-		if (!fs.existsSync(dir)) {
-			fs.mkdirSync(dir, { recursive: true })
+		const connectionString = process.env.POSTGRES_URL
+		if (!connectionString) {
+			console.warn('[DB Init Warning] POSTGRES_URL not set, database disabled')
+			return
 		}
 
-		db = new Database(DB_PATH)
-		// WAL mode for better concurrent read performance
-		db.pragma('journal_mode = WAL')
+		pool = new Pool({
+			connectionString,
+			max: 5,
+			idleTimeoutMillis: 30000,
+			connectionTimeoutMillis: 15000,
+			ssl: connectionString.includes('sslmode=require')
+				? { rejectUnauthorized: false }
+				: false
+		})
 
-		db.exec(`
+		// 验证连接
+		const client = await pool.connect()
+		client.release()
+
+		// 创建表（PostgreSQL 语法）
+		await pool.query(`
 			CREATE TABLE IF NOT EXISTS parse_records (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				id SERIAL PRIMARY KEY,
 				openid VARCHAR(100) NOT NULL,
 				platform VARCHAR(50) DEFAULT NULL,
 				media_type VARCHAR(20) DEFAULT NULL,
 				url TEXT,
 				title TEXT,
-				created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)
 		`)
 
-		console.log('SQLite database initialized:', DB_PATH)
+		console.log('PostgreSQL database initialized (Neon)')
 	} catch (error) {
-		console.error('Failed to initialize SQLite database:', error)
+		console.error('Failed to initialize PostgreSQL database:', error)
 		throw error
 	}
 }
 
-// pony: return async wrapper so existing callers (pool.query with await) work unchanged
 function getPool() {
-	if (!db) return null
-	return {
-		query(sql, params = []) {
-			const isSelect = sql.trim().toUpperCase().startsWith('SELECT')
-			if (isSelect) {
-				const stmt = db.prepare(sql)
-				return [stmt.all(...(Array.isArray(params) ? params : [params]))]
-			} else {
-				const stmt = db.prepare(sql)
-				return [stmt.run(...(Array.isArray(params) ? params : [params]))]
-			}
-		}
-	}
+	return pool
 }
 
 function getDB() {
-	return db
+	return pool
 }
 
 module.exports = {
