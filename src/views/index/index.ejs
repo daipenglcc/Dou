@@ -37,16 +37,14 @@
 			line-height: 1.5;
 		}
 
+		[v-cloak] {
+			display: none !important;
+		}
+
 		#app {
-			opacity: 0;
-			transition: opacity 0.4s ease;
 			min-height: 100vh;
 			display: flex;
 			flex-direction: column;
-		}
-
-		#app.loaded {
-			opacity: 1;
 		}
 
 		/* ── 页面顶级 Container ── */
@@ -1070,7 +1068,7 @@
 </head>
 
 <body>
-	<div id="app" :class="{ loaded: isLoaded }">
+	<div id="app" v-cloak>
 		<div class="container">
 			<!-- 顶部 Header -->
 			<div class="header">
@@ -1255,14 +1253,14 @@
 					<div class="author-card">
 						<div class="glow-accent"></div>
 						<div class="author-header">
-							<div class="avatar-wrap" @click="previewImage(parseResult.author?.avatar)">
-								<img class="avatar" :src="parseResult.author?.avatar" alt="avatar" />
+							<div class="avatar-wrap" @click="previewImage(parseResult.author ? parseResult.author.avatar : '')">
+								<img class="avatar" :src="parseResult.author ? parseResult.author.avatar : ''" alt="avatar" />
 							</div>
 							<div class="author-info">
-								<div class="author-name" @click="copyText(parseResult.author?.nickname, '用户名')">{{
-									parseResult.author?.nickname }}</div>
-								<div class="author-meta" @click="copyText(parseResult.author?.author_id, '用户ID')">@{{
-									parseResult.author?.author_id }}</div>
+								<div class="author-name" @click="copyText(parseResult.author ? parseResult.author.nickname : '', '用户名')">{{
+									parseResult.author ? parseResult.author.nickname : '' }}</div>
+								<div class="author-meta" @click="copyText(parseResult.author ? parseResult.author.author_id : '', '用户ID')">@{{
+									parseResult.author ? parseResult.author.author_id : '' }}</div>
 							</div>
 							<div class="btn-copy" @click="copyAuthorInfo">
 								<svg class="icon-svg" width="14" height="14" viewBox="0 0 24 24">
@@ -1273,13 +1271,13 @@
 							</div>
 						</div>
 
-						<div class="content-wrap" @click="copyText(parseResult.project?.title, '内容')">
-							<div class="content-title">{{ parseResult.project?.title }}</div>
+						<div class="content-wrap" @click="copyText(parseResult.project ? parseResult.project.title : '', '内容')">
+							<div class="content-title">{{ parseResult.project ? parseResult.project.title : '' }}</div>
 						</div>
 
 						<div class="stats-row">
-							<div class="stat-item" @click="showStatModal('点赞', parseResult.statistics?.digg_count)">
-								<div class="stat-label">{{ formatCount(parseResult.statistics?.digg_count) }}</div>
+							<div class="stat-item" @click="showStatModal('点赞', parseResult.statistics ? parseResult.statistics.digg_count : 0)">
+								<div class="stat-label">{{ formatCount(parseResult.statistics ? parseResult.statistics.digg_count : 0) }}</div>
 								<div class="stat-meta">
 									<svg class="icon-svg" width="13" height="13" color="#9b6ddb" viewBox="0 0 24 24">
 										<path
@@ -1289,8 +1287,8 @@
 								</div>
 							</div>
 							<div class="stat-divider"></div>
-							<div class="stat-item" @click="showStatModal('评论', parseResult.statistics?.comment_count)">
-								<div class="stat-label">{{ formatCount(parseResult.statistics?.comment_count) }}</div>
+							<div class="stat-item" @click="showStatModal('评论', parseResult.statistics ? parseResult.statistics.comment_count : 0)">
+								<div class="stat-label">{{ formatCount(parseResult.statistics ? parseResult.statistics.comment_count : 0) }}</div>
 								<div class="stat-meta">
 									<svg class="icon-svg" width="13" height="13" color="#9b6ddb" viewBox="0 0 24 24">
 										<path
@@ -1300,8 +1298,8 @@
 								</div>
 							</div>
 							<div class="stat-divider"></div>
-							<div class="stat-item" @click="showStatModal('分享', parseResult.statistics?.share_count)">
-								<div class="stat-label">{{ formatCount(parseResult.statistics?.share_count) }}</div>
+							<div class="stat-item" @click="showStatModal('分享', parseResult.statistics ? parseResult.statistics.share_count : 0)">
+								<div class="stat-label">{{ formatCount(parseResult.statistics ? parseResult.statistics.share_count : 0) }}</div>
 								<div class="stat-meta">
 									<svg class="icon-svg" width="13" height="13" color="#9b6ddb" viewBox="0 0 24 24">
 										<path
@@ -1311,8 +1309,8 @@
 								</div>
 							</div>
 							<div class="stat-divider"></div>
-							<div class="stat-item" @click="showStatModal('收藏', parseResult.statistics?.collect_count)">
-								<div class="stat-label">{{ formatCount(parseResult.statistics?.collect_count) }}</div>
+							<div class="stat-item" @click="showStatModal('收藏', parseResult.statistics ? parseResult.statistics.collect_count : 0)">
+								<div class="stat-label">{{ formatCount(parseResult.statistics ? parseResult.statistics.collect_count : 0) }}</div>
 								<div class="stat-meta">
 									<svg class="icon-svg" width="13" height="13" color="#9b6ddb" viewBox="0 0 24 24">
 										<path
@@ -1325,7 +1323,7 @@
 					</div>
 
 					<!-- 视频模式 -->
-					<div v-if="parseResult.project?.type === 'video'">
+					<div v-if="parseResult.project && parseResult.project.type === 'video'">
 						<div class="section-header">
 							<span class="section-title">视频预览</span>
 							<div v-if="parseResult.platform" class="platform-source">
@@ -1440,7 +1438,7 @@
 						<span>分享</span>
 					</button>
 
-					<div v-if="parseResult.project?.type === 'video'" class="btn-action-download"
+					<div v-if="parseResult.project && parseResult.project.type === 'video'" class="btn-action-download"
 						@click="downloadVideo">
 						<svg class="icon-svg" width="18" height="18" viewBox="0 0 24 24">
 							<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
@@ -1493,8 +1491,13 @@
 		</div>
 	</div>
 
-	<!-- Vue 3 CDN -->
-	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+	<!-- Vue 3 CDN (Production Build) -->
+	<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+	<script>
+		if (typeof Vue === 'undefined') {
+			document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+		}
+	</script>
 	<script>
 		// 平台 SVG Logos (1:1 来自 DouMP)
 		const svgLogos = {
