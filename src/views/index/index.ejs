@@ -1099,6 +1099,10 @@
 			vertical-align: middle;
 			fill: currentColor;
 		}
+
+		.icon-stroke {
+			fill: none !important;
+		}
 	</style>
 </head>
 
@@ -1246,10 +1250,10 @@
 					<!-- 使用教程 -->
 					<div class="tutorial-section">
 						<div class="tutorial-header">
-							<svg class="icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#702ae1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-								<circle cx="12" cy="12" r="10"></circle>
-								<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-								<line x1="12" y1="17" x2="12.01" y2="17"></line>
+							<svg class="icon-svg icon-stroke" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#702ae1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<circle cx="12" cy="12" r="9" fill="none" stroke="#702ae1" stroke-width="2"></circle>
+								<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" fill="none" stroke="#702ae1" stroke-width="2"></path>
+								<circle cx="12" cy="17" r="1" fill="#702ae1" stroke="none"></circle>
 							</svg>
 							<span class="tutorial-title">使用教程</span>
 						</div>
@@ -1784,35 +1788,18 @@
 						showToast(`已触发 ${selected.length} 张图片下载`);
 					};
 
-					// 微信/网页分享 (带 shareText 参数生成)
+					// 网页分享：直接复制带参链接
 					const shareApp = async () => {
-						const title = parseResult.value
-							? `${parseResult.value.author?.nickname || ''}的作品：${parseResult.value.project?.title || ''}`
-							: '天天下载 - 无水印解析下载器';
-						
 						let shareUrl = window.location.origin + window.location.pathname;
 						if (shareText.value.trim()) {
 							shareUrl += '?shareText=' + encodeURIComponent(shareText.value.trim());
-						}
-
-						if (navigator.share) {
-							try {
-								await navigator.share({
-									title: title,
-									text: '快速解析视频，支持无水印下载',
-									url: shareUrl
-								});
-								return;
-							} catch (e) {
-								if (e.name === 'AbortError') return;
-							}
 						}
 
 						const ok = await copyToClipboard(shareUrl);
 						if (ok) {
 							showToast('分享链接已复制，好友打开可自动解析！');
 						} else {
-							showToast('链接复制失败，请手动复制浏览器地址');
+							showToast('链接复制失败，请手动复制地址栏链接');
 						}
 					};
 
