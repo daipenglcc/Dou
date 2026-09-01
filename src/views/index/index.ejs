@@ -1688,13 +1688,39 @@
 						lightbox.value.visible = true;
 					};
 
+					// 通用兼容级文本复制 (支持 HTTPS / HTTP / 各类浏览器)
+					const copyToClipboard = async (text) => {
+						if (!text) return false;
+						if (navigator.clipboard && window.isSecureContext) {
+							try {
+								await navigator.clipboard.writeText(String(text));
+								return true;
+							} catch (e) {}
+						}
+						try {
+							const textArea = document.createElement('textarea');
+							textArea.value = String(text);
+							textArea.style.position = 'fixed';
+							textArea.style.left = '-999999px';
+							textArea.style.top = '-999999px';
+							document.body.appendChild(textArea);
+							textArea.focus();
+							textArea.select();
+							const successful = document.execCommand('copy');
+							document.body.removeChild(textArea);
+							return successful;
+						} catch (err) {
+							return false;
+						}
+					};
+
 					// 文本复制
 					const copyText = async (text, label) => {
 						if (!text) return;
-						try {
-							await navigator.clipboard.writeText(String(text));
+						const ok = await copyToClipboard(text);
+						if (ok) {
 							showToast(`${label}已复制`);
-						} catch (e) {
+						} else {
 							showToast('复制失败');
 						}
 					};
@@ -1702,10 +1728,10 @@
 					const copyAuthorInfo = async () => {
 						if (!parseResult.value) return;
 						const text = `${parseResult.value.project?.title || ''}\n\n作者：${parseResult.value.author?.nickname} (${parseResult.value.author?.author_id})`;
-						try {
-							await navigator.clipboard.writeText(text);
+						const ok = await copyToClipboard(text);
+						if (ok) {
 							showToast('已复制作品信息');
-						} catch (e) {
+						} else {
 							showToast('复制失败');
 						}
 					};
@@ -1751,12 +1777,16 @@
 						showToast(`已触发 ${selected.length} 张图片下载`);
 					};
 
-					// 微信/网页分享 (兼容 Web Share API 与剪贴板复制)
+					// 微信/网页分享 (带 shareText 参数生成)
 					const shareApp = async () => {
-						const title = parseResult.value?.project?.title
-							? `${parseResult.value.author?.nickname || ''}的作品：${parseResult.value.project.title}`
+						const title = parseResult.value
+							? `${parseResult.value.author?.nickname || ''}的作品：${parseResult.value.project?.title || ''}`
 							: '天天下载 - 无水印解析下载器';
-						const shareUrl = window.location.href;
+						
+						let shareUrl = window.location.origin + window.location.pathname;
+						if (shareText.value.trim()) {
+							shareUrl += '?shareText=' + encodeURIComponent(shareText.value.trim());
+						}
 
 						if (navigator.share) {
 							try {
@@ -1771,11 +1801,11 @@
 							}
 						}
 
-						try {
-							await navigator.clipboard.writeText(shareUrl);
-							showToast('页面链接已复制，快去分享给好友吧！');
-						} catch (e) {
-							showToast('链接复制失败');
+						const ok = await copyToClipboard(shareUrl);
+						if (ok) {
+							showToast('分享链接已复制，好友打开可自动解析！');
+						} else {
+							showToast('链接复制失败，请手动复制浏览器地址');
 						}
 					};
 
@@ -1829,11 +1859,32 @@
 
 					onMounted(() => {
 						isLoaded.value = true;
-						// 监听 hash 路由
-						const hash = window.location.hash.replace('#', '');
-						if (['index', 'detail', 'records'].includes(hash)) {
-							currentPage.value = hash;
-							if (hash === 'records') fetchRecords();
+
+						// 提取 URL 中的 shareText 参数 (?shareText=... 或 #index?shareText=...)
+						const urlParams = new URLSearchParams(window.location.search);
+						let paramShareText = urlParams.get('shareText');
+
+						if (!paramShareText && window.location.hash.includes('shareText=')) {
+							const hashParts = window.location.hash.split('?');
+							if (hashParts[1]) {
+								const hashParams = new URLSearchParams(hashParts[1]);
+								paramShareText = hashParams.get('shareText');
+							}
+						}
+
+						if (paramShareText) {
+							shareText.value = decodeURIComponent(paramShareText);
+							showToast('检测到分享链接，正在自动解析...');
+							setTimeout(() => {
+								parseVideo();
+							}, 400);
+						} else {
+							// 监听 hash 路由
+							const hash = window.location.hash.replace('#', '').split('?')[0];
+							if (['index', 'detail', 'records'].includes(hash)) {
+								currentPage.value = hash;
+								if (hash === 'records') fetchRecords();
+							}
 						}
 					});
 
