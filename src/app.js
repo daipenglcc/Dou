@@ -31,6 +31,11 @@ app.use(
 	})
 )
 
+const serve = require('koa-static')
+
+// 配置静态资源目录 (例如 favicon.ico / 图标等)
+app.use(serve(path.join(__dirname, '../public')))
+
 // 使用中间件
 app.use(bodyParser())
 
@@ -40,6 +45,27 @@ router.get('/', async (ctx) => {
 		title: '抖音视频下载器'
 	})
 })
+
+// SEO 爬虫协议与站点地图
+router.get('/robots.txt', (ctx) => {
+	ctx.type = 'text/plain'
+	ctx.body = `User-agent: *
+Allow: /
+Sitemap: ${ctx.origin}/sitemap.xml`
+})
+
+router.get('/sitemap.xml', (ctx) => {
+	ctx.type = 'application/xml'
+	ctx.body = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${ctx.origin}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`
+})
+
 router.use('/api', videoRouter.routes())
 
 app.use(router.routes())
