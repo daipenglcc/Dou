@@ -435,73 +435,102 @@
 			line-height: 1.4;
 		}
 
-		/* 底部悬浮分享栏 */
+		/* ── 分享 CTA（固定悬浮底部 1:1 DouMP） ── */
 		.share-cta {
 			position: fixed;
-			bottom: 0;
-			left: 0;
-			right: 0;
-			z-index: 90;
-			background: rgba(44, 47, 49, 0.92);
-			backdrop-filter: blur(16px);
-			-webkit-backdrop-filter: blur(16px);
+			bottom: 24px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: calc(100% - 48px);
+			max-width: 552px;
+			z-index: 99;
+			background: linear-gradient(135deg, #FF758C 0%, #7117EA 100%);
+			border-radius: 24px;
 			padding: 12px 20px;
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
+			box-shadow: 0 4px 20px rgba(112, 42, 225, 0.3);
+			border: 1px solid rgba(255, 255, 255, 0.15);
+			transition: opacity 0.3s;
 		}
 
-		.share-cta-inner {
-			max-width: 600px;
-			margin: 0 auto;
-			width: 100%;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
+		.share-cta:active {
+			opacity: 0.9;
 		}
 
 		.share-cta-left {
 			display: flex;
 			align-items: center;
-			gap: 10px;
+			gap: 12px;
+			flex: 1;
+			min-width: 0;
+			overflow: hidden;
 		}
 
 		.share-icon-wrap {
-			width: 36px;
-			height: 36px;
-			border-radius: 18px;
-			background: rgba(112, 42, 225, 0.4);
+			width: 40px;
+			height: 40px;
+			border-radius: 16px;
+			background: rgba(255, 255, 255, 0.2);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			color: var(--white);
+			flex-shrink: 0;
+			color: #ffffff;
 		}
 
 		.share-text-wrap {
 			display: flex;
 			flex-direction: column;
+			gap: 2px;
+			flex: 1;
+			min-width: 0;
+			overflow: hidden;
 		}
 
 		.share-title {
-			font-size: 14px;
+			display: block;
+			font-size: 16px;
 			font-weight: 700;
-			color: var(--white);
+			color: #ffffff;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
 		.share-desc {
-			font-size: 11px;
-			color: rgba(255, 255, 255, 0.7);
+			display: block;
+			font-size: 12px;
+			color: rgba(255, 255, 255, 0.8);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
 		.btn-share {
-			background: linear-gradient(135deg, #702ae1 0%, #8c46f6 100%);
-			color: var(--white);
-			border: none;
-			padding: 8px 16px;
-			border-radius: 18px;
-			font-size: 13px;
-			font-weight: 700;
+			width: 80px;
+			height: 40px;
+			background: #ffffff !important;
+			color: #7117EA !important;
+			font-size: 14px !important;
+			font-weight: 800 !important;
+			padding: 0 !important;
+			border: none !important;
+			border-radius: 16px !important;
+			white-space: nowrap;
+			flex-shrink: 0;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 			cursor: pointer;
+			animation: share-pulse 2s infinite ease-in-out;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		@keyframes share-pulse {
+			0%, 100% { transform: scale(1); }
+			50% { transform: scale(1.05); }
 		}
 
 		/* ── pages/detail/detail 样式 ── */
@@ -1084,14 +1113,6 @@
 						<div class="header-title">天天下载</div>
 						<div class="header-subtitle">无水印下载 · 永久免费使用</div>
 					</div>
-
-					<button v-if="currentPage === 'index'" class="btn-history-nav" @click="goToPage('records')">
-						<svg class="icon-svg" width="14" height="14" viewBox="0 0 24 24">
-							<path
-								d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
-						</svg>
-						历史
-					</button>
 				</div>
 			</div>
 
@@ -1408,23 +1429,21 @@
 				</div>
 			</div>
 
-			<!-- 底部悬浮分享栏 (仅在首页) -->
+			<!-- 底部悬浮分享栏 (仅在首页 1:1 DouMP) -->
 			<div v-if="currentPage === 'index'" class="share-cta">
-				<div class="share-cta-inner">
-					<div class="share-cta-left">
-						<div class="share-icon-wrap">
-							<svg class="icon-svg" width="20" height="20" viewBox="0 0 24 24">
-								<path
-									d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
-							</svg>
-						</div>
-						<div class="share-text-wrap">
-							<span class="share-title">分享给好友</span>
-							<span class="share-desc">好用的工具，值得与朋友共享</span>
-						</div>
+				<div class="share-cta-left">
+					<div class="share-icon-wrap">
+						<svg class="icon-svg" width="22" height="22" viewBox="0 0 24 24">
+							<path
+								d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
+						</svg>
 					</div>
-					<button class="btn-share" @click="shareApp">立即分享</button>
+					<div class="share-text-wrap">
+						<span class="share-title">分享给好友</span>
+						<span class="share-desc">好用的工具，值得与朋友共享</span>
+					</div>
 				</div>
+				<button class="btn-share" @click="shareApp">立即分享</button>
 			</div>
 
 			<!-- 详情页底部固定按钮 (仅在详情页) -->
