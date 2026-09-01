@@ -49,7 +49,29 @@ class PlatformProcessor {
 		}
 
 		// 调用平台解析器
-		return await parser.parseUrl(shareUrl)
+		try {
+			return await parser.parseUrl(shareUrl)
+		} catch (error) {
+			console.error(`[${platform}] 解析失败:`, error.message)
+			// 如果是明确的用户向提示（如已被作者删除、下架、私密不可见等），直接向前端透传
+			if (
+				error.isUserFacing ||
+				/已被.*删除|不存在|下架|私密|无权访问|暂时无法浏览/.test(error.message)
+			) {
+				throw error
+			}
+			const platformNames = {
+				douyin: '抖音',
+				xiaohongshu: '小红书',
+				kuaishou: '快手',
+				bilibili: '哔哩哔哩',
+				toutiao: '今日头条'
+			}
+			const platformName = platformNames[platform] || platform
+			throw new Error(
+				`抱歉，${platformName}近期风控比较严，暂时没法解析啦，建议先试试其他平台~`
+			)
+		}
 	}
 
 	/**
@@ -64,7 +86,7 @@ class PlatformProcessor {
 			return 'douyin'
 		} else if (domain.includes('kuaishou.com') || domain.includes('v.kuaishou.com')) {
 			return 'kuaishou'
-		} else if (domain.includes('xiaohongshu.com') || domain.includes('xhslink.com')) {
+		} else if (domain.includes('xiaohongshu.com') || domain.includes('xhslink.')) {
 			return 'xiaohongshu'
 		} else if (domain.includes('bilibili.com') || domain.includes('b23.tv')) {
 			return 'bilibili'
