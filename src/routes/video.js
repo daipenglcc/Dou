@@ -190,7 +190,7 @@ router.get('/download-stream', async (ctx) => {
 			ctx.status = 400
 			ctx.body = {
 				success: false,
-				error: '该文件体量较大（已超过 50MB），暂不支持在线下载'
+				error: '当前视频超过 50MB，受小程序平台规则限制，暂不支持直接下载保存。'
 			}
 			return
 		}
@@ -202,7 +202,9 @@ router.get('/download-stream', async (ctx) => {
 				downloadedBytes += chunk.length
 				if (downloadedBytes > MAX_FILE_SIZE) {
 					response.data.destroy()
-					callback(new Error('该文件体量较大（已超过 50MB），暂不支持在线下载'))
+					callback(
+						new Error('当前视频超过 50MB，受小程序平台规则限制，暂不支持直接下载保存。')
+					)
 					return
 				}
 				callback(null, chunk)
@@ -268,7 +270,7 @@ router.get('/proxyFile', async (ctx) => {
 			ctx.status = 400
 			ctx.body = {
 				success: false,
-				error: '该文件体量较大（已超过 50MB），暂不支持在线下载'
+				error: '当前视频超过 50MB，受小程序平台规则限制，暂不支持直接下载保存。'
 			}
 			return
 		}
@@ -280,7 +282,9 @@ router.get('/proxyFile', async (ctx) => {
 				downloadedBytes += chunk.length
 				if (downloadedBytes > MAX_FILE_SIZE) {
 					response.data.destroy()
-					callback(new Error('该文件体量较大（已超过 50MB），暂不支持在线下载'))
+					callback(
+						new Error('当前视频超过 50MB，受小程序平台规则限制，暂不支持直接下载保存。')
+					)
 					return
 				}
 				callback(null, chunk)
