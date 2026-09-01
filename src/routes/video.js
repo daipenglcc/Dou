@@ -11,6 +11,9 @@ const router = new Router()
 const WX_APP_ID = 'wx5030420cb6d74ebf'
 const WX_APP_SECRET = 'f01fd311245f8c13f1c065c95ad19528'
 
+// 单文件最大下载限制：50MB (52,428,800 字节)
+const MAX_FILE_SIZE = 50 * 1024 * 1024
+
 /**
  * 将 URL 包装为代理地址
  */
@@ -168,20 +171,65 @@ router.get('/download-stream', async (ctx) => {
 	const { url, title } = ctx.query
 	if (!url) {
 		ctx.status = 400
-		ctx.body = '缺少视频 URL'
+		ctx.body = { success: false, error: '缺少视频 URL' }
 		return
 	}
 
-	// 设置下载头
-	ctx.set('Content-Type', 'application/octet-stream')
-	ctx.set(
-		'Content-Disposition',
-		`attachment; filename="${encodeURIComponent(title || 'video')}.mp4"`
-	)
+	try {
+		const response = await axios.get(url, {
+			responseType: 'stream',
+			headers: {
+				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+			},
+			timeout: 15 * 1000
+		})
 
-	// 获取视频流并返回
-	const response = await axios.get(url, { responseType: 'stream' })
-	ctx.body = response.data
+		const contentLength = response.headers['content-length']
+		if (contentLength && parseInt(contentLength, 10) > MAX_FILE_SIZE) {
+			response.data.destroy()
+			ctx.status = 400
+			ctx.body = {
+				success: false,
+				error: '该文件体量较大（已超过 50MB），暂不支持在线下载'
+			}
+			return
+		}
+
+		const { Transform } = require('stream')
+		let downloadedBytes = 0
+		const sizeLimitTransform = new Transform({
+			transform(chunk, encoding, callback) {
+				downloadedBytes += chunk.length
+				if (downloadedBytes > MAX_FILE_SIZE) {
+					response.data.destroy()
+					callback(new Error('该文件体量较大（已超过 50MB），暂不支持在线下载'))
+					return
+				}
+				callback(null, chunk)
+			}
+		})
+		sizeLimitTransform.on('error', (err) => {
+			console.warn('[Download Stream Limit]', err.message)
+		})
+
+		ctx.set('Content-Type', 'application/octet-stream')
+		ctx.set(
+			'Content-Disposition',
+			`attachment; filename="${encodeURIComponent(title || 'video')}.mp4"`
+		)
+		if (contentLength) {
+			ctx.set('Content-Length', contentLength)
+		}
+
+		ctx.body = response.data.pipe(sizeLimitTransform)
+	} catch (error) {
+		console.error('Download stream error:', error.message)
+		ctx.status = 400
+		ctx.body = {
+			success: false,
+			error: error.message.includes('50MB') ? error.message : '下载失败，远程资源无法访问'
+		}
+	}
 })
 
 /**
@@ -214,6 +262,34 @@ router.get('/proxyFile', async (ctx) => {
 			timeout: 15 * 1000 // 15 秒（仅限连接建立超时，不影响文件传输）
 		})
 
+		const contentLength = response.headers['content-length']
+		if (contentLength && parseInt(contentLength, 10) > MAX_FILE_SIZE) {
+			response.data.destroy()
+			ctx.status = 400
+			ctx.body = {
+				success: false,
+				error: '该文件体量较大（已超过 50MB），暂不支持在线下载'
+			}
+			return
+		}
+
+		const { Transform } = require('stream')
+		let downloadedBytes = 0
+		const sizeLimitTransform = new Transform({
+			transform(chunk, encoding, callback) {
+				downloadedBytes += chunk.length
+				if (downloadedBytes > MAX_FILE_SIZE) {
+					response.data.destroy()
+					callback(new Error('该文件体量较大（已超过 50MB），暂不支持在线下载'))
+					return
+				}
+				callback(null, chunk)
+			}
+		})
+		sizeLimitTransform.on('error', (err) => {
+			console.warn('[Proxy File Limit]', err.message)
+		})
+
 		// 获取文件名
 		const fileName = path.basename(url.split('?')[0]) || 'file'
 
@@ -222,16 +298,19 @@ router.get('/proxyFile', async (ctx) => {
 		ctx.set('Content-Type', response.headers['content-type'] || 'application/octet-stream')
 
 		// ⭐ 把 Content-Length 转发给前端
-		if (response.headers['content-length']) {
-			ctx.set('Content-Length', response.headers['content-length'])
+		if (contentLength) {
+			ctx.set('Content-Length', contentLength)
 		}
 
-		// 直接返回文件流
-		ctx.body = response.data
+		// 返回带限制的数据流
+		ctx.body = response.data.pipe(sizeLimitTransform)
 	} catch (error) {
 		console.error('Proxy file error:', error.message)
-		ctx.status = 500
-		ctx.body = { success: false, error: '代理下载失败' }
+		ctx.status = 400
+		ctx.body = {
+			success: false,
+			error: error.message.includes('50MB') ? error.message : '代理下载失败'
+		}
 	}
 })
 
