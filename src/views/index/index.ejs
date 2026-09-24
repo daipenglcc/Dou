@@ -1889,21 +1889,33 @@
 						window.open(downloadUrl, '_blank');
 					};
 
-					const downloadImages = () => {
+					const downloadImages = async () => {
 						const selected = imageList.value.filter(i => i.selected);
 						if (selected.length === 0) {
 							showToast('请先选择图片');
 							return;
 						}
-						selected.forEach(img => {
-							const a = document.createElement('a');
-							a.href = img.url;
-							a.download = `image_${img.id}.jpg`;
-							document.body.appendChild(a);
-							a.click();
-							document.body.removeChild(a);
-						});
-						showToast(`已触发 ${selected.length} 张图片下载`);
+						
+						showToast(`开始下载 ${selected.length} 张图片...`);
+						for (const img of selected) {
+							try {
+								const res = await fetch(img.url);
+								const blob = await res.blob();
+								const blobUrl = URL.createObjectURL(blob);
+								const a = document.createElement('a');
+								a.href = blobUrl;
+								a.download = `image_${img.id}.jpg`;
+								document.body.appendChild(a);
+								a.click();
+								document.body.removeChild(a);
+								URL.revokeObjectURL(blobUrl);
+								// 加点延时防止浏览器拦截过多并发下载
+								await new Promise(r => setTimeout(r, 300));
+							} catch (e) {
+								console.error('图片下载失败', e);
+							}
+						}
+						showToast('图片下载完成');
 					};
 
 					// 网页分享：直接复制带参链接
