@@ -1764,7 +1764,7 @@
 							const res = await fetch('/api/parse', {
 								method: 'POST',
 								headers: { 'Content-Type': 'application/json' },
-								body: JSON.stringify({ shareText: text, openid })
+								body: JSON.stringify({ shareText: text, openid, direct: 1 })
 							});
 							const data = await res.json();
 

@@ -136,9 +136,9 @@ router.post('/parse', async (ctx) => {
 			}
 		}
 
-		// 默认不再包装为本地代理，直接返回真实 CDN 地址以节省服务器带宽
-		// 这样客户端（浏览器）会直接从抖音/小红书的 CDN 加载资源，速度极快
-		if (ctx.request.body.proxy) {
+		// 默认包装为本地代理，解决小程序等端的跨域/白名单限制
+		// 传递 direct=1 则跳过包装，返回真实 CDN 地址（适用于 Web 端，节省服务器带宽）
+		if (String(ctx.request.body.direct) !== '1' && String(ctx.query.direct) !== '1') {
 			const proxyBase = `${ctx.origin}/api/proxyFile?url=`
 			wrapUrlsWithProxy(videoInfo, proxyBase)
 		}
