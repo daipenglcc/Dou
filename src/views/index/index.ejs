@@ -1455,7 +1455,7 @@
 							</div>
 						</div>
 						<div class="video-card">
-							<video class="video-player" :src="videoProxySrc" controls playsinline></video>
+							<video class="video-player" :src="videoProxySrc" :poster="parseResult.project ? parseResult.project.cover : ''" preload="metadata" referrerpolicy="no-referrer" controls playsinline></video>
 						</div>
 					</div>
 

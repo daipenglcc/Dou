@@ -259,13 +259,24 @@ router.get('/proxyFile', async (ctx) => {
 	}
 
 	try {
+		const reqHeaders = {
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+		}
+		// 透传 Range 请求头，支持视频分片秒开与进度条拖动
+		if (ctx.headers.range) {
+			reqHeaders.Range = ctx.headers.range
+		}
+		// 针对 B 站 CDN 自动补充 Referer，避免 403
+		if (/bilivideo\.|hdslb\.com|akamaized\.net/i.test(url)) {
+			reqHeaders.Referer = 'https://www.bilibili.com/'
+		}
+
 		// 请求远程文件流
 		const response = await axios.get(url, {
 			responseType: 'stream',
-			headers: {
-				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-			},
-			timeout: 15 * 1000 // 15 秒（仅限连接建立超时，不影响文件传输）
+			headers: reqHeaders,
+			timeout: 15 * 1000, // 15 秒（仅限连接建立超时，不影响文件传输）
+			validateStatus: (status) => status >= 200 && status < 400
 		})
 
 		const contentLength = response.headers['content-length']
@@ -301,8 +312,16 @@ router.get('/proxyFile', async (ctx) => {
 		// 获取文件名
 		const fileName = path.basename(url.split('?')[0]) || 'file'
 
-		// 设置响应头（把远程头部透传给前端）
-		ctx.set('Content-Disposition', `attachment; filename="${fileName}"`)
+		// 透传 206 Partial Content 及分片响应头
+		ctx.status = response.status === 206 ? 206 : 200
+		ctx.set('Accept-Ranges', response.headers['accept-ranges'] || 'bytes')
+		if (response.headers['content-range']) {
+			ctx.set('Content-Range', response.headers['content-range'])
+		}
+		// 非分片请求设置下载文件名，分片播放请求不强制 attachment
+		if (response.status !== 206) {
+			ctx.set('Content-Disposition', `attachment; filename="${fileName}"`)
+		}
 		ctx.set('Content-Type', response.headers['content-type'] || 'application/octet-stream')
 
 		// ⭐ 把 Content-Length 转发给前端
