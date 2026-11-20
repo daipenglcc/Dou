@@ -5,6 +5,7 @@ node_modules/
 logs/
 .eslintcache
 downloads/
+.agents
 
 # Claude Code
 .claude
