@@ -138,7 +138,10 @@ async function runHealthCheck() {
 		TEST_CASES.map(async (item) => {
 			const t0 = Date.now()
 			try {
-				const data = await processor.parseShareUrl(item.url)
+				const parser = processor.parsers[item.platform]
+				const data = parser
+					? await parser.parseUrl(item.url)
+					: await processor.parseShareUrl(item.url)
 				const durationMs = Date.now() - t0
 				const project = data?.project || {}
 				const urlList = Array.isArray(project.url_list) ? project.url_list : []
