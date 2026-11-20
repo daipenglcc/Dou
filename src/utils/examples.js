@@ -8,14 +8,14 @@ const EXAMPLE_LINKS = [
 		platformName: '抖音',
 		type: 'video',
 		label: '抖音视频示例',
-		text: '2.00 复制打开抖音，看看【绿肥红的作品】你的社交动态不再更新了 我该从哪里了解你的现状  https://v.douyin.com/F_MnkKBlxaE/ :7pm 07/10 wfo:/ v@f.BG'
+		text: '0.05 复制打开抖音，看看【逐花归海.的作品】“我对流星许愿,希望你永远快乐·” ᴵ ʷⁱˢʰ ... https://v.douyin.com/ab9ZPlJQMuo/ e@O.xs :8pm uSL:/ 11/07 '
 	},
 	{
 		platform: 'douyin',
 		platformName: '抖音',
 		type: 'image',
 		label: '抖音图片示例',
-		text: '0.74 复制打开抖音，看看【予卿繁.的图文作品】黑色背景图评论区自取。# 如果这个宇宙的结局是注定... https://v.douyin.com/TpT3OXPGd4w/ E@H.ip :2pm Cuf:/ 06/11'
+		text: '6.15 复制打开抖音，看看【雪加鸭嘴兽大板砖积木的图文作品】值得长期不换的壁纸# 蓝猫图库 # 手机墙纸 # ... https://v.douyin.com/g5-Y27aXErc/ 01/15 kca:/ B@G.iP :8pm '
 	},
 	{
 		platform: 'xiaohongshu',
@@ -36,14 +36,14 @@ const EXAMPLE_LINKS = [
 		platformName: '快手',
 		type: 'video',
 		label: '快手视频示例',
-		text: 'https://v.kuaishou.com/nLHP9uAF "喜爱度激励计划 "跨次元应援中国队 "微胖 "换装 该作品在快手被播放过46.7万次，点击链接，打开【快手】直接观看！'
+		text: 'https://v.kuaishou.com/KpIapZUP 《叮咚》前奏一响全场沸腾，哪怕突发小意外也挡不住这姐的千禧年活力！"徐怀钰1128绍兴诸暨演唱会 "徐怀钰绍兴演唱会 "叮咚 该作品在快手被播放过379万次，点击链接，打开【快手】直接观看！'
 	},
 	{
 		platform: 'kuaishou',
 		platformName: '快手',
 		type: 'image',
 		label: '快手图片示例',
-		text: 'https://v.kuaishou.com/JZKPUPxy 眉目伊始 可爱如斯 该作品在快手被播放过1719次，点击链接，打开【快手】直接观看！'
+		text: 'https://v.kuaishou.com/J9dNWUsH 人与人之间的缘，像一盏忽明忽暗的灯 "氛围感女头 "遗憾头像女 "好景不常在 "久久爱意PK赛 该作品在快手被播放过15万次，点击链接，打开【快手】直接观看！'
 	},
 	{
 		platform: 'bilibili',

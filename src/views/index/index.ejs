@@ -7,8 +7,10 @@
 	<title>天天下载 - 免费抖音小红书快手B站今日头条无水印视频解析下载工具</title>
 
 	<!-- SEO 核心 Meta 标签 -->
-	<meta name="description" content="天天下载 - 免费多平台视频及图文在线无水印解析下载工具。支持抖音无水印下载、小红书图集与视频提取、快手原画去水印、B站高清视频解析、今日头条视频提取。复制分享链接一键解析，原画直出，永久免费。" />
-	<meta name="keywords" content="抖音去水印, 抖音视频下载, 小红书图集下载, 小红书无水印, 快手去水印, B站视频解析下载, 今日头条视频下载, 今日头条去水印, 短视频去水印在线工具, 无水印解析, 天天下载" />
+	<meta name="description"
+		content="天天下载 - 免费多平台视频及图文在线无水印解析下载工具。支持抖音无水印下载、小红书图集与视频提取、快手原画去水印、B站高清视频解析、今日头条视频提取。复制分享链接一键解析，原画直出，永久免费。" />
+	<meta name="keywords"
+		content="抖音去水印, 抖音视频下载, 小红书图集下载, 小红书无水印, 快手去水印, B站视频解析下载, 今日头条视频下载, 今日头条去水印, 短视频去水印在线工具, 无水印解析, 天天下载" />
 	<meta name="author" content="天天下载" />
 	<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 	<meta name="applicable-device" content="pc,mobile" />
@@ -764,8 +766,15 @@
 		}
 
 		@keyframes share-pulse {
-			0%, 100% { transform: scale(1); }
-			50% { transform: scale(1.05); }
+
+			0%,
+			100% {
+				transform: scale(1);
+			}
+
+			50% {
+				transform: scale(1.05);
+			}
 		}
 
 		/* ── pages/detail/detail 样式 ── */
@@ -1429,8 +1438,8 @@
 
 						<div class="input-wrap">
 							<div class="input-box">
-								<textarea class="link-input" placeholder="请粘贴抖音、快手、小红书、B站、今日头条的分享内容或链接" v-model="shareText"
-									ref="textareaRef"></textarea>
+								<textarea class="link-input" placeholder="请粘贴抖音、快手、小红书、B站、今日头条的分享内容或链接"
+									v-model="shareText" ref="textareaRef"></textarea>
 
 								<div class="input-btns">
 									<div class="platform-logos" @click="dialogVisible = true">
@@ -1453,11 +1462,13 @@
 							</div>
 
 							<!-- 各平台快捷示例卡片 -->
-							<div class="example-card">
+							<div class="example-card" v-if="exampleGroups.length > 0">
 								<div class="example-card-header">
 									<div class="example-card-title-wrap">
-										<svg class="icon-svg" width="16" height="16" color="#702ae1" viewBox="0 0 24 24">
-											<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+										<svg class="icon-svg" width="16" height="16" color="#702ae1"
+											viewBox="0 0 24 24">
+											<path
+												d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
 										</svg>
 										<span class="example-card-title">快捷示例</span>
 									</div>
@@ -1467,7 +1478,8 @@
 								<div class="example-list">
 									<div class="example-row" v-for="group in exampleGroups" :key="group.platform">
 										<div class="example-platform">
-											<span class="example-platform-icon" v-html="svgLogos[group.platform]"></span>
+											<span class="example-platform-icon"
+												v-html="svgLogos[group.platform]"></span>
 											<span class="example-platform-name">{{ group.platformName }}</span>
 										</div>
 
@@ -1475,11 +1487,14 @@
 											<div v-for="btn in group.items" :key="btn.type" class="btn-example"
 												:class="btn.type === 'image' ? 'btn-example-image' : 'btn-example-video'"
 												@click="useExample(btn.text)">
-												<svg v-if="btn.type === 'image'" class="icon-svg" width="13" height="13" viewBox="0 0 24 24">
-													<path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+												<svg v-if="btn.type === 'image'" class="icon-svg" width="13" height="13"
+													viewBox="0 0 24 24">
+													<path
+														d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
 												</svg>
 												<svg v-else class="icon-svg" width="13" height="13" viewBox="0 0 24 24">
-													<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+													<path
+														d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
 												</svg>
 												<span class="btn-example-text">{{ btn.shortLabel }}</span>
 											</div>
@@ -1547,9 +1562,11 @@
 					<!-- 使用教程 -->
 					<div class="tutorial-section">
 						<div class="tutorial-header">
-							<svg class="icon-svg icon-stroke" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#702ae1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<svg class="icon-svg icon-stroke" width="20" height="20" viewBox="0 0 24 24" fill="none"
+								stroke="#702ae1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 								<circle cx="12" cy="12" r="9" fill="none" stroke="#702ae1" stroke-width="2"></circle>
-								<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" fill="none" stroke="#702ae1" stroke-width="2"></path>
+								<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" fill="none" stroke="#702ae1"
+									stroke-width="2"></path>
 								<circle cx="12" cy="17" r="1" fill="#702ae1" stroke="none"></circle>
 							</svg>
 							<span class="tutorial-title">使用教程</span>
@@ -1582,13 +1599,18 @@
 					<div class="author-card">
 						<div class="glow-accent"></div>
 						<div class="author-header">
-							<div class="avatar-wrap" @click="previewImage(parseResult.author ? parseResult.author.avatar : '')">
-								<img class="avatar" :src="parseResult.author ? parseResult.author.avatar : ''" alt="avatar" />
+							<div class="avatar-wrap"
+								@click="previewImage(parseResult.author ? parseResult.author.avatar : '')">
+								<img class="avatar" :src="parseResult.author ? parseResult.author.avatar : ''"
+									alt="avatar" />
 							</div>
 							<div class="author-info">
-								<div class="author-name" @click="copyText(parseResult.author ? parseResult.author.nickname : '', '用户名')">{{
+								<div class="author-name"
+									@click="copyText(parseResult.author ? parseResult.author.nickname : '', '用户名')">{{
 									parseResult.author ? parseResult.author.nickname : '' }}</div>
-								<div class="author-meta" @click="copyText(parseResult.author ? parseResult.author.author_id : '', '用户ID')">@{{
+								<div class="author-meta"
+									@click="copyText(parseResult.author ? parseResult.author.author_id : '', '用户ID')">
+									@{{
 									parseResult.author ? parseResult.author.author_id : '' }}</div>
 							</div>
 							<div class="btn-copy" @click="copyAuthorInfo">
@@ -1600,13 +1622,16 @@
 							</div>
 						</div>
 
-						<div class="content-wrap" @click="copyText(parseResult.project ? parseResult.project.title : '', '内容')">
+						<div class="content-wrap"
+							@click="copyText(parseResult.project ? parseResult.project.title : '', '内容')">
 							<div class="content-title">{{ parseResult.project ? parseResult.project.title : '' }}</div>
 						</div>
 
 						<div class="stats-row">
-							<div class="stat-item" @click="showStatModal('点赞', parseResult.statistics ? parseResult.statistics.digg_count : 0)">
-								<div class="stat-label">{{ formatCount(parseResult.statistics ? parseResult.statistics.digg_count : 0) }}</div>
+							<div class="stat-item"
+								@click="showStatModal('点赞', parseResult.statistics ? parseResult.statistics.digg_count : 0)">
+								<div class="stat-label">{{ formatCount(parseResult.statistics ?
+									parseResult.statistics.digg_count : 0) }}</div>
 								<div class="stat-meta">
 									<svg class="icon-svg" width="13" height="13" color="#9b6ddb" viewBox="0 0 24 24">
 										<path
@@ -1616,8 +1641,10 @@
 								</div>
 							</div>
 							<div class="stat-divider"></div>
-							<div class="stat-item" @click="showStatModal('评论', parseResult.statistics ? parseResult.statistics.comment_count : 0)">
-								<div class="stat-label">{{ formatCount(parseResult.statistics ? parseResult.statistics.comment_count : 0) }}</div>
+							<div class="stat-item"
+								@click="showStatModal('评论', parseResult.statistics ? parseResult.statistics.comment_count : 0)">
+								<div class="stat-label">{{ formatCount(parseResult.statistics ?
+									parseResult.statistics.comment_count : 0) }}</div>
 								<div class="stat-meta">
 									<svg class="icon-svg" width="13" height="13" color="#9b6ddb" viewBox="0 0 24 24">
 										<path
@@ -1627,8 +1654,10 @@
 								</div>
 							</div>
 							<div class="stat-divider"></div>
-							<div class="stat-item" @click="showStatModal('分享', parseResult.statistics ? parseResult.statistics.share_count : 0)">
-								<div class="stat-label">{{ formatCount(parseResult.statistics ? parseResult.statistics.share_count : 0) }}</div>
+							<div class="stat-item"
+								@click="showStatModal('分享', parseResult.statistics ? parseResult.statistics.share_count : 0)">
+								<div class="stat-label">{{ formatCount(parseResult.statistics ?
+									parseResult.statistics.share_count : 0) }}</div>
 								<div class="stat-meta">
 									<svg class="icon-svg" width="13" height="13" color="#9b6ddb" viewBox="0 0 24 24">
 										<path
@@ -1638,8 +1667,10 @@
 								</div>
 							</div>
 							<div class="stat-divider"></div>
-							<div class="stat-item" @click="showStatModal('收藏', parseResult.statistics ? parseResult.statistics.collect_count : 0)">
-								<div class="stat-label">{{ formatCount(parseResult.statistics ? parseResult.statistics.collect_count : 0) }}</div>
+							<div class="stat-item"
+								@click="showStatModal('收藏', parseResult.statistics ? parseResult.statistics.collect_count : 0)">
+								<div class="stat-label">{{ formatCount(parseResult.statistics ?
+									parseResult.statistics.collect_count : 0) }}</div>
 								<div class="stat-meta">
 									<svg class="icon-svg" width="13" height="13" color="#9b6ddb" viewBox="0 0 24 24">
 										<path
@@ -1661,7 +1692,9 @@
 							</div>
 						</div>
 						<div class="video-card">
-							<video class="video-player" :src="videoProxySrc" :poster="parseResult.project ? parseResult.project.cover : ''" preload="metadata" referrerpolicy="no-referrer" controls playsinline></video>
+							<video class="video-player" :src="videoProxySrc"
+								:poster="parseResult.project ? parseResult.project.cover : ''" preload="metadata"
+								referrerpolicy="no-referrer" controls playsinline></video>
 						</div>
 					</div>
 
@@ -1810,10 +1843,12 @@
 			<div v-if="infoModal.visible" class="modal-overlay" @click.self="infoModal.visible = false">
 				<div class="modal-box">
 					<div class="modal-title">{{ infoModal.title }}</div>
-					<div class="modal-content" style="text-align: center; font-size: 15px; line-height: 1.6; white-space: pre-line;">
+					<div class="modal-content"
+						style="text-align: center; font-size: 15px; line-height: 1.6; white-space: pre-line;">
 						{{ infoModal.content }}
 					</div>
-					<button class="modal-btn-confirm" @click="infoModal.visible = false">{{ infoModal.confirmText }}</button>
+					<button class="modal-btn-confirm" @click="infoModal.visible = false">{{ infoModal.confirmText
+						}}</button>
 				</div>
 			</div>
 
@@ -1889,18 +1924,7 @@
 						};
 					};
 
-					// 默认 5 平台示例数据（打开即展示，onMounted 时从 /api/examples 动态刷新）
-					const DEFAULT_EXAMPLES = [
-						{ platform: 'douyin', platformName: '抖音', type: 'video', label: '抖音视频示例', text: '2.00 复制打开抖音，看看【绿肥红的作品】你的社交动态不再更新了 我该从哪里了解你的现状  https://v.douyin.com/F_MnkKBlxaE/ :7pm 07/10 wfo:/ v@f.BG' },
-						{ platform: 'douyin', platformName: '抖音', type: 'image', label: '抖音图片示例', text: '0.74 复制打开抖音，看看【予卿繁.的图文作品】黑色背景图评论区自取。# 如果这个宇宙的结局是注定... https://v.douyin.com/TpT3OXPGd4w/ E@H.ip :2pm Cuf:/ 06/11' },
-						{ platform: 'xiaohongshu', platformName: '小红书', type: 'video', label: '小红书视频示例', text: '模特的无痕内衣选择？舒适塑形不突兀 夏天小透衫的救... https://xhslink.cn/o/3OL9bl6jCKY 保留口令，直达【小红书】围观~' },
-						{ platform: 'xiaohongshu', platformName: '小红书', type: 'image', label: '小红书图片示例', text: '就这样萌萌的看着你呀 小比格 https://xhslink.cn/o/4twzQsvcpLk 【小红书】里有精彩内容，快去瞧瞧！' },
-						{ platform: 'kuaishou', platformName: '快手', type: 'video', label: '快手视频示例', text: 'https://v.kuaishou.com/nLHP9uAF "喜爱度激励计划 "跨次元应援中国队 "微胖 "换装 该作品在快手被播放过46.7万次，点击链接，打开【快手】直接观看！' },
-						{ platform: 'kuaishou', platformName: '快手', type: 'image', label: '快手图片示例', text: 'https://v.kuaishou.com/JZKPUPxy 眉目伊始 可爱如斯 该作品在快手被播放过1719次，点击链接，打开【快手】直接观看！' },
-						{ platform: 'bilibili', platformName: '哔哩哔哩', type: 'video', label: '哔哩哔哩视频示例', text: '【落花情-哔哩哔哩】 https://b23.tv/BV1NUnR6DEBT' },
-						{ platform: 'toutiao', platformName: '今日头条', type: 'video', label: '今日头条视频示例', text: '【我感觉他说得好像没问题，但又总觉得哪里不太对……】点击链接打开👉 https://m.toutiao.com/is/NcSYy5s7pEI/' }
-					];
-
+					// 从后端 /api/examples 接口动态拉取各平台示例并分组
 					const groupExamplesByPlatform = (list) => {
 						const map = {};
 						const groups = [];
@@ -1923,7 +1947,7 @@
 						return groups;
 					};
 
-					const exampleGroups = ref(groupExamplesByPlatform(DEFAULT_EXAMPLES));
+					const exampleGroups = ref([]);
 
 					const fetchExamples = async () => {
 						try {
@@ -1932,7 +1956,7 @@
 							if (res.ok && data.success && Array.isArray(data.data) && data.data.length > 0) {
 								exampleGroups.value = groupExamplesByPlatform(data.data);
 							}
-						} catch (e) {}
+						} catch (e) { }
 					};
 
 					// 获取或初始化 OpenID
@@ -2077,7 +2101,7 @@
 							try {
 								await navigator.clipboard.writeText(String(text));
 								return true;
-							} catch (e) {}
+							} catch (e) { }
 						}
 						try {
 							const textArea = document.createElement('textarea');
@@ -2126,6 +2150,9 @@
 						};
 					};
 
+					// 国内高速下载中转节点（腾讯云 SCF 广州区）
+					const DOWNLOAD_PROXY_ORIGIN = 'https://download.vues.cn';
+
 					// 下载功能
 					const downloadVideo = () => {
 						if (!videoProxySrc.value) {
@@ -2142,7 +2169,7 @@
 							return;
 						}
 						const title = parseResult.value?.project?.title || 'video';
-						const downloadUrl = `/api/download-stream?url=${encodeURIComponent(videoProxySrc.value)}&title=${encodeURIComponent(title)}`;
+						const downloadUrl = `${DOWNLOAD_PROXY_ORIGIN}/api/download-stream?url=${encodeURIComponent(videoProxySrc.value)}&title=${encodeURIComponent(title)}`;
 						window.open(downloadUrl, '_blank');
 					};
 
@@ -2152,11 +2179,18 @@
 							showToast('请先选择图片');
 							return;
 						}
-						
+
 						showToast(`开始下载 ${selected.length} 张图片...`);
 						for (const img of selected) {
 							try {
-								const res = await fetch(img.url);
+								let res;
+								try {
+									res = await fetch(img.url);
+									if (!res.ok) throw new Error('direct fetch failed');
+								} catch (corsErr) {
+									// 直连触发跨域限制时自动降级走国内高速下载节点
+									res = await fetch(`${DOWNLOAD_PROXY_ORIGIN}/api/proxyFile?url=${encodeURIComponent(img.url)}`);
+								}
 								const blob = await res.blob();
 								const blobUrl = URL.createObjectURL(blob);
 								const a = document.createElement('a');

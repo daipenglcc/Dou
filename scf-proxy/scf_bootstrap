@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+export PORT=9000
+exec $(command -v node) /var/user/index.js
