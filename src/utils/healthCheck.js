@@ -128,76 +128,76 @@ function escapeHtml(str) {
 }
 
 /**
- * 执行全部平台的解析自检（并发执行，缩短整体耗时以兼容 Serverless 超时限制）
+ * 执行全部平台的解析自检（串行逐项检测，避免同平台并发请求触发风控）
  */
 async function runHealthCheck() {
 	const processor = new PlatformProcessor()
 	const startedAt = Date.now()
+	const results = []
 
-	const results = await Promise.all(
-		TEST_CASES.map(async (item) => {
-			const t0 = Date.now()
-			try {
-				const parser = processor.parsers[item.platform]
-				const data = parser
-					? await parser.parseUrl(item.url)
-					: await processor.parseShareUrl(item.url)
-				const durationMs = Date.now() - t0
-				const project = data?.project || {}
-				const urlList = Array.isArray(project.url_list) ? project.url_list : []
+	for (const item of TEST_CASES) {
+		const t0 = Date.now()
+		try {
+			const parser = processor.parsers[item.platform]
+			const data = parser
+				? await parser.parseUrl(item.url)
+				: await processor.parseShareUrl(item.url)
+			const durationMs = Date.now() - t0
+			const project = data?.project || {}
+			const urlList = Array.isArray(project.url_list) ? project.url_list : []
 
-				if (urlList.length === 0) {
-					return {
-						...item,
-						ok: false,
-						durationMs,
-						title: project.title || '',
-						author: data?.author?.nickname || '',
-						mediaCount: 0,
-						error: '解析结果 url_list 为空'
-					}
-				}
-
-				const mediaCheck = await checkMediaUrl(urlList[0])
-				const typeMatch = project.type === item.expectedType
-				const ok = mediaCheck.ok && typeMatch
-
-				let error = ''
-				if (!typeMatch) {
-					error = `类型不匹配: 期望 ${item.expectedType}, 实际 ${project.type}`
-				} else if (!mediaCheck.ok) {
-					error = `媒体直链异常: ${mediaCheck.reason}`
-				}
-
-				return {
-					...item,
-					ok,
-					durationMs,
-					type: project.type,
-					title: (project.title || '').slice(0, 40),
-					author: data?.author?.nickname || '未知用户',
-					mediaCount: urlList.length,
-					hasCover: Boolean(project.cover),
-					mediaType: mediaCheck.contentType || '-',
-					mediaSize: formatSize(mediaCheck.size),
-					error
-				}
-			} catch (e) {
-				return {
+			if (urlList.length === 0) {
+				results.push({
 					...item,
 					ok: false,
-					durationMs: Date.now() - t0,
-					title: '',
-					author: '',
+					durationMs,
+					title: project.title || '',
+					author: data?.author?.nickname || '',
 					mediaCount: 0,
-					hasCover: false,
-					mediaType: '-',
-					mediaSize: '-',
-					error: e.message
-				}
+					error: '解析结果 url_list 为空'
+				})
+				continue
 			}
-		})
-	)
+
+			const mediaCheck = await checkMediaUrl(urlList[0])
+			const typeMatch = project.type === item.expectedType
+			const ok = mediaCheck.ok && typeMatch
+
+			let error = ''
+			if (!typeMatch) {
+				error = `类型不匹配: 期望 ${item.expectedType}, 实际 ${project.type}`
+			} else if (!mediaCheck.ok) {
+				error = `媒体直链异常: ${mediaCheck.reason}`
+			}
+
+			results.push({
+				...item,
+				ok,
+				durationMs,
+				type: project.type,
+				title: (project.title || '').slice(0, 40),
+				author: data?.author?.nickname || '未知用户',
+				mediaCount: urlList.length,
+				hasCover: Boolean(project.cover),
+				mediaType: mediaCheck.contentType || '-',
+				mediaSize: formatSize(mediaCheck.size),
+				error
+			})
+		} catch (e) {
+			results.push({
+				...item,
+				ok: false,
+				durationMs: Date.now() - t0,
+				title: '',
+				author: '',
+				mediaCount: 0,
+				hasCover: false,
+				mediaType: '-',
+				mediaSize: '-',
+				error: e.message
+			})
+		}
+	}
 
 	const passed = results.filter((r) => r.ok).length
 	const failed = results.length - passed
