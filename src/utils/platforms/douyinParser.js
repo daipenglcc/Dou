@@ -64,44 +64,75 @@ class DouyinParser {
 
 		let data = null
 
-		// 3. 策略 A: 请求 aweme/detail API (带 aid=6383 & device_platform=webapp)
-		const detailApiUrl = `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}&aid=6383&device_platform=webapp`
-		console.log('[DouyinParser] 尝试策略 A: 请求 detail API:', detailApiUrl)
+		// 3. 策略 A: 请求 iesdouyin slidesinfo 接口 (免 Cookie / 免签名，直接返回完整 aweme_details)
+		if (!isNoteUrl) {
+			const slidesApiUrl = `https://www.iesdouyin.com/web/api/v2/aweme/slidesinfo/?aweme_ids=%5B${videoId}%5D&request_source=1`
+			console.log('[DouyinParser] 尝试策略 A: 请求 slidesinfo API:', slidesApiUrl)
 
-		try {
-			const apiResp = await axios.get(detailApiUrl, {
-				headers: {
-					'User-Agent': SPIDER_UA,
-					Referer: 'https://www.douyin.com/',
-					Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
-				},
-				timeout: 8000
-			})
-			if (apiResp.data && apiResp.data.aweme_detail) {
-				console.log('[DouyinParser] 策略 A 成功获取到 aweme_detail 对象')
-				data = apiResp.data.aweme_detail
-			} else {
-				const filterReason = apiResp.data?.filter_detail?.filter_reason || ''
-				console.log(
-					`[DouyinParser] 策略 A API 未直接返回 aweme_detail, filter_reason: "${filterReason}"`
-				)
-				if (filterReason === 'images_base') {
+			try {
+				const slidesResp = await axios.get(slidesApiUrl, {
+					headers: {
+						'User-Agent': MOBILE_UA,
+						Referer: `https://www.iesdouyin.com/share/video/${videoId}/`
+					},
+					timeout: 8000
+				})
+				const details = slidesResp.data?.aweme_details
+				if (Array.isArray(details) && details.length > 0 && details[0]) {
+					console.log('[DouyinParser] 策略 A 成功获取到 aweme_details[0]')
+					data = details[0]
+				} else {
+					const filterInfo = slidesResp.data?.filter_list?.[0]
 					console.log(
-						'[DouyinParser] 识别到 filter_reason="images_base"，确认该作品为图文作品!'
+						`[DouyinParser] 策略 A 未返回 aweme_details, filter_list:`,
+						filterInfo || 'none'
 					)
-					isNoteUrl = true
 				}
+			} catch (slidesErr) {
+				console.error('[DouyinParser] 策略 A 请求异常:', slidesErr.message)
 			}
-		} catch (apiErr) {
-			console.error('[DouyinParser] 策略 A 请求异常:', apiErr.message)
 		}
 
-		// 4. 策略 B: 尝试请求 iesdouyin 的 H5 Share 页面 (Mobile UA) 提取 _ROUTER_DATA
+		// 4. 策略 B: 请求 aweme/detail API (带 aid=6383 & device_platform=webapp)
+		if (!data) {
+			const detailApiUrl = `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}&aid=6383&device_platform=webapp`
+			console.log('[DouyinParser] 尝试策略 B: 请求 detail API:', detailApiUrl)
+
+			try {
+				const apiResp = await axios.get(detailApiUrl, {
+					headers: {
+						'User-Agent': SPIDER_UA,
+						Referer: 'https://www.douyin.com/',
+						Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
+					},
+					timeout: 8000
+				})
+				if (apiResp.data && apiResp.data.aweme_detail) {
+					console.log('[DouyinParser] 策略 B 成功获取到 aweme_detail 对象')
+					data = apiResp.data.aweme_detail
+				} else {
+					const filterReason = apiResp.data?.filter_detail?.filter_reason || ''
+					console.log(
+						`[DouyinParser] 策略 B API 未直接返回 aweme_detail, filter_reason: "${filterReason}"`
+					)
+					if (filterReason === 'images_base') {
+						console.log(
+							'[DouyinParser] 识别到 filter_reason="images_base"，确认该作品为图文作品!'
+						)
+						isNoteUrl = true
+					}
+				}
+			} catch (apiErr) {
+				console.error('[DouyinParser] 策略 B 请求异常:', apiErr.message)
+			}
+		}
+
+		// 5. 策略 C: 尝试请求 iesdouyin 的 H5 Share 页面 (Mobile UA) 提取 _ROUTER_DATA
 		if (!data) {
 			const pathsToTry = isNoteUrl ? ['note', 'video'] : ['video', 'note']
 			for (const pathType of pathsToTry) {
 				const shareHtmlUrl = `https://www.iesdouyin.com/share/${pathType}/${videoId}`
-				console.log(`[DouyinParser] 尝试策略 B (${pathType} 路径: ${shareHtmlUrl})...`)
+				console.log(`[DouyinParser] 尝试策略 C (${pathType} 路径: ${shareHtmlUrl})...`)
 
 				try {
 					const resp = await axios.get(shareHtmlUrl, {
@@ -119,7 +150,7 @@ class DouyinParser {
 						const jsonData = JSON.parse(match[1].trim())
 						const loaderData = jsonData.loaderData || {}
 						console.log(
-							`[DouyinParser] 策略 B (${pathType}) loaderData keys:`,
+							`[DouyinParser] 策略 C (${pathType}) loaderData keys:`,
 							Object.keys(loaderData)
 						)
 
@@ -142,23 +173,23 @@ class DouyinParser {
 						) {
 							data = originalInfo.item_list[0]
 							console.log(
-								`[DouyinParser] 策略 B (${pathType}) 成功提取到 item_list[0]`
+								`[DouyinParser] 策略 C (${pathType}) 成功提取到 item_list[0]`
 							)
 							break
 						}
 					}
 				} catch (bErr) {
-					console.log(`[DouyinParser] 策略 B (${pathType}) 提取失败:`, bErr.message)
+					console.log(`[DouyinParser] 策略 C (${pathType}) 提取失败:`, bErr.message)
 				}
 			}
 		}
 
-		// 5. 策略 C: 尝试请求 douyin.com Web 页面 (Spider UA) 提取 application/ld+json (Schema.org 结构数据)
+		// 6. 策略 D: 尝试请求 douyin.com Web 页面 (Spider UA) 提取 application/ld+json (仅图文兜底)
 		if (!data) {
 			const pathsToTry = isNoteUrl ? ['note', 'video'] : ['note', 'video']
 			for (const pathType of pathsToTry) {
 				const webUrl = `https://www.douyin.com/${pathType}/${videoId}`
-				console.log(`[DouyinParser] 尝试策略 C (${pathType} 路径: ${webUrl})...`)
+				console.log(`[DouyinParser] 尝试策略 D (${pathType} 路径: ${webUrl})...`)
 
 				try {
 					const resp = await axios.get(webUrl, {
@@ -183,13 +214,22 @@ class DouyinParser {
 							try {
 								const ldObj = JSON.parse(content)
 								if (ldObj['@type'] === 'article' || ldObj.image || ldObj.headline) {
-									console.log(
-										`[DouyinParser] 策略 C (${pathType}) 成功匹配到 schema.org JSON-LD 数据`
-									)
-
 									const images = (
 										Array.isArray(ldObj.image) ? ldObj.image : [ldObj.image]
 									).filter(Boolean)
+
+									// 仅当真正提取到图片列表时才返回，避免视频落入 JSON-LD 返回空 url_list 假成功
+									if (images.length === 0) {
+										console.log(
+											`[DouyinParser] 策略 D (${pathType}) JSON-LD 无有效图片资源，跳过`
+										)
+										continue
+									}
+
+									console.log(
+										`[DouyinParser] 策略 D (${pathType}) 成功匹配到 schema.org JSON-LD 图文数据, 图片数: ${images.length}`
+									)
+
 									const authorObj = ldObj.author || {}
 
 									let diggCount = 0
@@ -226,8 +266,7 @@ class DouyinParser {
 											project_id: videoId,
 											title: title,
 											desc: '',
-											type:
-												isNoteUrl || images.length > 0 ? 'image' : 'video',
+											type: 'image',
 											cover: images[0] || '',
 											url_list: images
 										},
@@ -246,7 +285,7 @@ class DouyinParser {
 									}
 
 									console.log(
-										`[DouyinParser] 策略 C (${pathType}) 解析完成:`,
+										`[DouyinParser] 策略 D (${pathType}) 解析完成:`,
 										resultObj.project.title
 									)
 									return resultObj
@@ -257,7 +296,7 @@ class DouyinParser {
 						}
 					}
 				} catch (cErr) {
-					console.log(`[DouyinParser] 策略 C (${pathType}) 提取失败:`, cErr.message)
+					console.log(`[DouyinParser] 策略 D (${pathType}) 提取失败:`, cErr.message)
 				}
 			}
 		}
@@ -373,6 +412,10 @@ class DouyinParser {
 				collect_count: stats.collect_count || 0
 			},
 			platform: 'douyin'
+		}
+
+		if (parsedResult.project.url_list.length === 0) {
+			throw new Error(`未能提取到抖音媒体资源地址 (videoId: ${videoId})`)
 		}
 
 		console.log('[DouyinParser] 解析完成:', parsedResult.project.title)
