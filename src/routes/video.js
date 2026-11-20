@@ -5,6 +5,7 @@ const path = require('path')
 const { getPool, getDB } = require('../utils/db')
 const { backup } = require('../utils/backup')
 const { runHealthCheck, runHealthCheckAndNotify } = require('../utils/healthCheck')
+const { EXAMPLE_LINKS } = require('../utils/examples')
 
 const router = new Router()
 
@@ -395,12 +396,13 @@ router.get('/wechat/login', async (ctx) => {
  * @param {string} ctx.query.openid - 用户的 openid
  */
 router.get('/records', async (ctx) => {
-	const { openid } = ctx.query
-	if (!openid) {
-		ctx.status = 400
-		ctx.body = { success: false, error: '缺少 openid 参数' }
-		return
-	}
+	// 暂时放开限制，所有用户可查看全部解析记录（后期如需按 openid 限制可取消下方注释）
+	// const { openid } = ctx.query
+	// if (!openid) {
+	// 	ctx.status = 400
+	// 	ctx.body = { success: false, error: '缺少 openid 参数' }
+	// 	return
+	// }
 
 	try {
 		const pool = getPool()
@@ -410,17 +412,20 @@ router.get('/records', async (ctx) => {
 			return
 		}
 
-		let rows
-		if (openid === 'obb9c16_q4N-aZ1mHu26hfvEp3Pk') {
-			const result = await pool.query('SELECT * FROM parse_records ORDER BY created_at DESC')
-			rows = result.rows
-		} else {
-			const result = await pool.query(
-				'SELECT * FROM parse_records WHERE openid = $1 ORDER BY created_at DESC',
-				[openid]
-			)
-			rows = result.rows
-		}
+		const result = await pool.query('SELECT * FROM parse_records ORDER BY created_at DESC')
+		const rows = result.rows
+
+		// let rows
+		// if (openid === 'obb9c16_q4N-aZ1mHu26hfvEp3Pk') {
+		// 	const result = await pool.query('SELECT * FROM parse_records ORDER BY created_at DESC')
+		// 	rows = result.rows
+		// } else {
+		// 	const result = await pool.query(
+		// 		'SELECT * FROM parse_records WHERE openid = $1 ORDER BY created_at DESC',
+		// 		[openid]
+		// 	)
+		// 	rows = result.rows
+		// }
 
 		ctx.body = {
 			success: true,
@@ -560,6 +565,22 @@ router.post('/db/backup', async (ctx) => {
 		ctx.body = { success: true, message: '备份已发送' }
 	} catch (e) {
 		ctx.body = { error: e.message }
+	}
+})
+
+// 获取各平台示例分享链接（支持按 platform / type 筛选）
+router.get('/examples', (ctx) => {
+	const { platform, type } = ctx.query
+	let list = EXAMPLE_LINKS
+	if (platform) {
+		list = list.filter((item) => item.platform === String(platform).toLowerCase())
+	}
+	if (type) {
+		list = list.filter((item) => item.type === String(type).toLowerCase())
+	}
+	ctx.body = {
+		success: true,
+		data: list
 	}
 })
 

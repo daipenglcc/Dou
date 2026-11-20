@@ -1,61 +1,21 @@
 const axios = require('axios')
 const PlatformProcessor = require('./platformProcessor')
 const { transporter } = require('./backup')
+const { EXAMPLE_LINKS } = require('./examples')
 
 const REPORT_EMAIL = 'youhuabujianye@gmail.com'
 const MAIL_FROM = '2808707765@qq.com'
 
-// 各平台自检测试用例（覆盖全部支持平台的视频与图集）
-const TEST_CASES = [
-	{
-		name: '抖音 · 视频',
-		platform: 'douyin',
-		expectedType: 'video',
-		url: 'https://v.douyin.com/F_MnkKBlxaE/'
-	},
-	{
-		name: '抖音 · 图集',
-		platform: 'douyin',
-		expectedType: 'image',
-		url: 'https://v.douyin.com/TpT3OXPGd4w/'
-	},
-	{
-		name: '小红书 · 图集',
-		platform: 'xiaohongshu',
-		expectedType: 'image',
-		url: 'https://xhslink.cn/o/4twzQsvcpLk'
-	},
-	{
-		name: '小红书 · 视频',
-		platform: 'xiaohongshu',
-		expectedType: 'video',
-		url: 'https://xhslink.cn/o/3OL9bl6jCKY'
-	},
-	{
-		name: '快手 · 视频',
-		platform: 'kuaishou',
-		expectedType: 'video',
-		url: 'https://v.kuaishou.com/nLHP9uAF'
-	},
-	{
-		name: '快手 · 图集',
-		platform: 'kuaishou',
-		expectedType: 'image',
-		url: 'https://v.kuaishou.com/JZKPUPxy'
-	},
-	{
-		name: 'B站 · 视频',
-		platform: 'bilibili',
-		expectedType: 'video',
-		url: 'https://b23.tv/BV1NUnR6DEBT'
-	},
-	{
-		name: '今日头条 · 视频',
-		platform: 'toutiao',
-		expectedType: 'video',
-		url: 'https://m.toutiao.com/is/NcSYy5s7pEI/'
+// 各平台自检测试用例（直接复用 EXAMPLE_LINKS，一处维护）
+const TEST_CASES = EXAMPLE_LINKS.map((item) => {
+	const urlMatch = item.text.match(/(https?:\/\/[a-zA-Z0-9\-._~:/?#@!$&'()*+,;=%]+)/)
+	return {
+		name: `${item.platformName} · ${item.type === 'video' ? '视频' : '图集'}`,
+		platform: item.platform,
+		expectedType: item.type,
+		url: urlMatch ? urlMatch[1] : item.text
 	}
-]
+})
 
 /**
  * 校验解析出的媒体直链是否可正常访问且非 HTML 页面
