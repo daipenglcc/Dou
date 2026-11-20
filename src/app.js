@@ -9,6 +9,7 @@ const videoRouter = require('./routes/video')
 const cron = require('node-cron')
 const { initDB } = require('./utils/db')
 const { backup } = require('./utils/backup')
+const { runHealthCheckAndNotify } = require('./utils/healthCheck')
 
 const app = new Koa()
 app.proxy = true
@@ -17,11 +18,21 @@ const router = new Router()
 // 初始化数据库（容错处理，防止 Vercel 无文件写入权限时报错挂掉）
 initDB().catch((e) => console.error('[DB Init Warning]', e.message))
 
-// 每天中午 12:00 备份数据库（仅限长服务环境）
+// 定时任务（仅限长服务环境）
 if (!process.env.VERCEL) {
+	// 每天中午 12:00 备份数据库
 	cron.schedule('0 12 * * *', () => backup().catch((e) => console.error('[backup]', e.message)), {
 		timezone: 'Asia/Shanghai'
 	})
+
+	// 每天下午 15:00 自动自检各平台解析并发送日志到邮箱
+	cron.schedule(
+		'0 15 * * *',
+		() => runHealthCheckAndNotify().catch((e) => console.error('[healthCheck]', e.message)),
+		{
+			timezone: 'Asia/Shanghai'
+		}
+	)
 }
 
 // 配置模板引擎

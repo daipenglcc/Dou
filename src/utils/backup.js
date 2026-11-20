@@ -41,4 +41,4 @@ async function backup() {
 	console.log(`[backup] 已发送至 ${to} (${sizeKB} KB)`)
 }
 
-module.exports = { backup }
+module.exports = { backup, transporter }

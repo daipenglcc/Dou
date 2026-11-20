@@ -4,6 +4,7 @@ const PlatformProcessor = require('../utils/platformProcessor')
 const path = require('path')
 const { getPool, getDB } = require('../utils/db')
 const { backup } = require('../utils/backup')
+const { runHealthCheck, runHealthCheckAndNotify } = require('../utils/healthCheck')
 
 const router = new Router()
 
@@ -540,6 +541,22 @@ router.post('/db/backup', async (ctx) => {
 		ctx.body = { success: true, message: '备份已发送' }
 	} catch (e) {
 		ctx.body = { error: e.message }
+	}
+})
+
+// 手动触发各平台解析自检（传 ?notify=1 时同步发送邮件报告）
+router.get('/health-check', async (ctx) => {
+	try {
+		const shouldNotify = String(ctx.query.notify) === '1'
+		const report = shouldNotify ? await runHealthCheckAndNotify() : await runHealthCheck()
+		ctx.body = {
+			success: report.failed === 0,
+			notified: shouldNotify,
+			data: report
+		}
+	} catch (e) {
+		ctx.status = 500
+		ctx.body = { success: false, error: e.message }
 	}
 })
 
