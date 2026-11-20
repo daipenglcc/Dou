@@ -52,25 +52,35 @@ app.use(bodyParser())
 
 // 路由
 router.get('/', async (ctx) => {
+	const siteOrigin =
+		ctx.origin && !ctx.origin.includes('localhost') ? ctx.origin : 'https://douyin.vues.cn'
 	await ctx.render('index/index', {
-		title: '抖音视频下载器'
+		title: '天天下载 - 免费抖音小红书快手B站今日头条无水印视频解析下载工具',
+		siteOrigin
 	})
 })
 
 // SEO 爬虫协议与站点地图
 router.get('/robots.txt', (ctx) => {
-	ctx.type = 'text/plain'
+	const siteOrigin =
+		ctx.origin && !ctx.origin.includes('localhost') ? ctx.origin : 'https://douyin.vues.cn'
+	ctx.type = 'text/plain; charset=utf-8'
 	ctx.body = `User-agent: *
 Allow: /
-Sitemap: ${ctx.origin}/sitemap.xml`
+Disallow: /api/
+Sitemap: ${siteOrigin}/sitemap.xml`
 })
 
 router.get('/sitemap.xml', (ctx) => {
-	ctx.type = 'application/xml'
+	const siteOrigin =
+		ctx.origin && !ctx.origin.includes('localhost') ? ctx.origin : 'https://douyin.vues.cn'
+	const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)
+	ctx.type = 'application/xml; charset=utf-8'
 	ctx.body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>${ctx.origin}/</loc>
+    <loc>${siteOrigin}/</loc>
+    <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>

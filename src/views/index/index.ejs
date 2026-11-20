@@ -3,45 +3,115 @@
 
 <head>
 	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-	<title>天天下载 - 免费抖音小红书快手B站无水印视频解析下载工具</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+	<title>天天下载 - 免费抖音小红书快手B站今日头条无水印视频解析下载工具</title>
 
 	<!-- SEO 核心 Meta 标签 -->
-	<meta name="description" content="天天下载 - 免费多平台视频及图文在线无水印解析下载工具。支持抖音无水印下载、小红书图集提取、快手原画视频解析、B站高清视频提取。复制链接一键去水印解析，永久免费使用。" />
-	<meta name="keywords" content="抖音去水印, 抖音视频下载, 小红书图集下载, 小红书无水印, 快手去水印, B站视频解析下载, 无水印解析, 视频下载器, 天天下载, 视频提取工具" />
+	<meta name="description" content="天天下载 - 免费多平台视频及图文在线无水印解析下载工具。支持抖音无水印下载、小红书图集与视频提取、快手原画去水印、B站高清视频解析、今日头条视频提取。复制分享链接一键解析，原画直出，永久免费。" />
+	<meta name="keywords" content="抖音去水印, 抖音视频下载, 小红书图集下载, 小红书无水印, 快手去水印, B站视频解析下载, 今日头条视频下载, 今日头条去水印, 短视频去水印在线工具, 无水印解析, 天天下载" />
 	<meta name="author" content="天天下载" />
-	<meta name="robots" content="index, follow" />
-	<meta name="referrer" content="never" />
-	<link rel="canonical" href="/" />
+	<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+	<meta name="applicable-device" content="pc,mobile" />
+	<meta name="theme-color" content="#702ae1" />
+	<meta name="referrer" content="no-referrer" />
+	<link rel="canonical" href="<%= siteOrigin %>/" />
 
 	<!-- Open Graph / 社交媒体与搜索引擎预览 -->
+	<meta property="og:locale" content="zh_CN" />
+	<meta property="og:url" content="<%= siteOrigin %>/" />
 	<meta property="og:title" content="天天下载 - 免费多平台视频/图文无水印解析下载工具" />
-	<meta property="og:description" content="支持抖音、快手、小红书、B站等多平台的视频与图文无水印在线提取，原画品质下载，永久免费使用。" />
+	<meta property="og:description" content="支持抖音、快手、小红书、B站、今日头条等多平台的视频与图文无水印在线提取，原画品质下载，永久免费使用。" />
 	<meta property="og:type" content="website" />
-	<meta property="og:image" content="/favicon.ico" />
+	<meta property="og:image" content="<%= siteOrigin %>/favicon.ico" />
 	<meta property="og:site_name" content="天天下载" />
 
 	<!-- Twitter Card -->
 	<meta name="twitter:card" content="summary" />
-	<meta name="twitter:title" content="天天下载 - 无水印视频解析下载" />
-	<meta name="twitter:description" content="免费支持抖音、快手、小红书、B站视频与图集无水印提取下载。" />
-	<meta name="twitter:image" content="/favicon.ico" />
+	<meta name="twitter:title" content="天天下载 - 免费无水印视频解析下载工具" />
+	<meta name="twitter:description" content="免费支持抖音、快手、小红书、B站、今日头条视频与图集无水印提取下载。" />
+	<meta name="twitter:image" content="<%= siteOrigin %>/favicon.ico" />
 
-	<!-- 结构化数据 JSON-LD (搜索引擎爬虫强化) -->
+	<!-- 结构化数据 JSON-LD (WebApplication + FAQPage + HowTo 搜索引擎爬虫强化) -->
 	<script type="application/ld+json">
 	{
 		"@context": "https://schema.org",
-		"@type": "WebApplication",
-		"name": "天天下载",
-		"alternateName": "Douyin & Xiaohongshu Video Downloader",
-		"description": "提供抖音、快手、小红书、B站等多平台视频与图文无水印提取解析和在线下载服务。",
-		"applicationCategory": "MultimediaApplication",
-		"operatingSystem": "All",
-		"offers": {
-			"@type": "Offer",
-			"price": "0",
-			"priceCurrency": "CNY"
-		}
+		"@graph": [
+			{
+				"@type": "WebApplication",
+				"name": "天天下载",
+				"alternateName": "多平台无水印视频图集解析下载工具",
+				"url": "<%= siteOrigin %>/",
+				"inLanguage": "zh-CN",
+				"description": "提供抖音、快手、小红书、哔哩哔哩（B站）、今日头条等多平台视频与图文无水印提取解析和在线下载服务。",
+				"applicationCategory": "MultimediaApplication",
+				"operatingSystem": "All",
+				"featureList": [
+					"抖音无水印视频与图文下载",
+					"小红书无水印视频与高清图集提取",
+					"快手无水印视频与图集下载",
+					"哔哩哔哩(B站)高清视频解析下载",
+					"今日头条高清视频直链提取下载"
+				],
+				"offers": {
+					"@type": "Offer",
+					"price": "0",
+					"priceCurrency": "CNY"
+				}
+			},
+			{
+				"@type": "HowTo",
+				"name": "如何免费无水印下载抖音、小红书、快手、B站、今日头条视频或图集",
+				"step": [
+					{
+						"@type": "HowToStep",
+						"position": 1,
+						"name": "复制分享链接",
+						"text": "打开抖音、快手、小红书、B站或今日头条，点击分享按钮并选择复制链接或分享口令。"
+					},
+					{
+						"@type": "HowToStep",
+						"position": 2,
+						"name": "粘贴并解析",
+						"text": "打开天天下载网页，将分享内容粘贴到输入框，点击「立即解析」。"
+					},
+					{
+						"@type": "HowToStep",
+						"position": 3,
+						"name": "无水印保存",
+						"text": "解析完成后直接预览原画视频或高清图集，点击「下载视频」或批量勾选图片保存到本地。"
+					}
+				]
+			},
+			{
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"name": "天天下载支持哪些平台的无水印解析？",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "目前支持抖音（视频与图文）、小红书（视频与图集）、快手（视频与图集）、哔哩哔哩 B站（视频）以及今日头条（视频）的无水印解析与下载。"
+						}
+					},
+					{
+						"@type": "Question",
+						"name": "天天下载是否收费或需要注册登录？",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "完全免费，无需注册或登录账号，复制分享链接即可直接在线解析下载。"
+						}
+					},
+					{
+						"@type": "Question",
+						"name": "支持电脑端和手机浏览器使用吗？",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "支持，兼容电脑浏览器、iOS Safari、Android 浏览器及微信内置浏览器的在线预览与下载。"
+						}
+					}
+				]
+			}
+		]
 	}
 	</script>
 
@@ -330,29 +400,145 @@
 			pointer-events: none;
 		}
 
-		/* 示例链接 */
-		.example-wrap {
+		/* 快捷示例卡片 (与 DouMP 1:1 统一) */
+		.example-card {
+			background: rgba(255, 255, 255, 0.92);
+			border-radius: 20px;
+			padding: 14px 16px;
+			border: 1px solid rgba(112, 42, 225, 0.08);
+			box-shadow: 0 6px 18px rgba(112, 42, 225, 0.05);
+		}
+
+		.example-card-header {
 			display: flex;
-			gap: 12px;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 8px;
+			padding-bottom: 8px;
+			border-bottom: 1px solid rgba(112, 42, 225, 0.08);
+		}
+
+		.example-card-title-wrap {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+
+		.example-card-title {
+			font-size: 14px;
+			font-weight: 700;
+			color: var(--on-surface);
+		}
+
+		.example-card-tip {
+			font-size: 11px;
+			color: var(--on-surface-variant);
+			opacity: 0.75;
+		}
+
+		.example-list {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.example-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 8px 0;
+			border-bottom: 1px solid rgba(171, 173, 175, 0.14);
+		}
+
+		.example-row:last-child {
+			border-bottom: none;
+			padding-bottom: 2px;
+		}
+
+		.example-platform {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.example-platform-icon {
+			width: 20px;
+			height: 20px;
+			border-radius: 5px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+
+		.example-platform-icon svg {
+			width: 20px;
+			height: 20px;
+			display: block;
+		}
+
+		.example-platform-name {
+			font-size: 14px;
+			font-weight: 600;
+			color: var(--on-surface);
+		}
+
+		.example-actions {
+			display: flex;
+			align-items: center;
+			gap: 8px;
 		}
 
 		.btn-example {
-			flex: 1;
-			background: var(--white);
-			border: 1px solid rgba(112, 42, 225, 0.12);
-			padding: 10px;
-			border-radius: 16px;
-			display: flex;
+			display: inline-flex;
 			align-items: center;
-			justify-content: center;
-			gap: 6px;
+			gap: 4px;
+			padding: 5px 12px;
+			border-radius: 9999px;
 			cursor: pointer;
+			user-select: none;
+			transition: transform 0.2s, opacity 0.2s;
+		}
+
+		.btn-example:active {
+			transform: scale(0.95);
+			opacity: 0.85;
+		}
+
+		.btn-example-video {
+			background: rgba(112, 42, 225, 0.08);
+			color: var(--primary);
+		}
+
+		.btn-example-image {
+			background: rgba(0, 101, 118, 0.08);
+			color: var(--tertiary);
 		}
 
 		.btn-example-text {
-			font-size: 13px;
+			font-size: 12px;
 			font-weight: 600;
-			color: var(--primary);
+		}
+
+		/* SEO 语义化页脚 (静态 HTML 直出，方便搜索引擎收录) */
+		.seo-footer {
+			max-width: 500px;
+			margin: 0 auto 96px;
+			padding: 0 20px 16px;
+			color: var(--on-surface-variant);
+			font-size: 12px;
+			line-height: 1.7;
+		}
+
+		.seo-footer h1 {
+			font-size: 14px;
+			font-weight: 700;
+			color: var(--on-surface);
+			margin-bottom: 6px;
+		}
+
+		.seo-footer p {
+			margin-bottom: 6px;
+			opacity: 0.85;
 		}
 
 		/* Bento Grid */
@@ -1243,7 +1429,7 @@
 
 						<div class="input-wrap">
 							<div class="input-box">
-								<textarea class="link-input" placeholder="请粘贴抖音、快手、小红书、B站的分享内容或链接" v-model="shareText"
+								<textarea class="link-input" placeholder="请粘贴抖音、快手、小红书、B站、今日头条的分享内容或链接" v-model="shareText"
 									ref="textareaRef"></textarea>
 
 								<div class="input-btns">
@@ -1252,6 +1438,7 @@
 										<span v-html="svgLogos.kuaishou"></span>
 										<span v-html="svgLogos.xiaohongshu"></span>
 										<span v-html="svgLogos.bilibili"></span>
+										<span v-html="svgLogos.toutiao"></span>
 									</div>
 									<div class="btn-paste" @click="pasteInput">粘贴</div>
 									<div class="btn-clear" @click="clearInput">清空</div>
@@ -1265,20 +1452,39 @@
 								<span class="btn-parse-text">{{ isLoading ? '解析中...' : '立即解析' }}</span>
 							</div>
 
-							<div class="example-wrap">
-								<div class="btn-example" @click="useExample(0)">
-									<svg class="icon-svg" width="18" height="18" color="#702ae1" viewBox="0 0 24 24">
-										<path
-											d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z" />
-									</svg>
-									<span class="btn-example-text">视频示例</span>
+							<!-- 各平台快捷示例卡片 -->
+							<div class="example-card">
+								<div class="example-card-header">
+									<div class="example-card-title-wrap">
+										<svg class="icon-svg" width="16" height="16" color="#702ae1" viewBox="0 0 24 24">
+											<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+										</svg>
+										<span class="example-card-title">快捷示例</span>
+									</div>
+									<span class="example-card-tip">点击一键解析体验</span>
 								</div>
-								<div class="btn-example" @click="useExample(1)">
-									<svg class="icon-svg" width="18" height="18" color="#702ae1" viewBox="0 0 24 24">
-										<path
-											d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-									</svg>
-									<span class="btn-example-text">图片示例</span>
+
+								<div class="example-list">
+									<div class="example-row" v-for="group in exampleGroups" :key="group.platform">
+										<div class="example-platform">
+											<span class="example-platform-icon" v-html="svgLogos[group.platform]"></span>
+											<span class="example-platform-name">{{ group.platformName }}</span>
+										</div>
+
+										<div class="example-actions">
+											<div v-for="btn in group.items" :key="btn.type" class="btn-example"
+												:class="btn.type === 'image' ? 'btn-example-image' : 'btn-example-video'"
+												@click="useExample(btn.text)">
+												<svg v-if="btn.type === 'image'" class="icon-svg" width="13" height="13" viewBox="0 0 24 24">
+													<path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+												</svg>
+												<svg v-else class="icon-svg" width="13" height="13" viewBox="0 0 24 24">
+													<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+												</svg>
+												<span class="btn-example-text">{{ btn.shortLabel }}</span>
+											</div>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -1320,7 +1526,7 @@
 							</div>
 							<div class="bento-card-body">
 								<div class="bento-card-title">多平台支持</div>
-								<div class="bento-card-desc">支持解析抖音、快手、小红书、B站分享链接</div>
+								<div class="bento-card-desc">支持解析抖音、快手、小红书、B站、今日头条分享链接</div>
 							</div>
 						</div>
 
@@ -1352,7 +1558,7 @@
 						<div class="steps-list">
 							<div class="step-item">
 								<div class="step-num">1</div>
-								<div class="step-text">打开抖音、快手、小红书或B站，找到想要的视频或图文</div>
+								<div class="step-text">打开抖音、快手、小红书、B站或今日头条，找到想要的视频或图文</div>
 							</div>
 							<div class="step-item">
 								<div class="step-num">2</div>
@@ -1580,7 +1786,7 @@
 				<div class="modal-box">
 					<div class="modal-title">工具说明</div>
 					<div class="modal-content">
-						<p>支持解析抖音、快手、小红书、B站等平台的视频/图文链接，无水印下载。</p>
+						<p>支持解析抖音、快手、小红书、B站、今日头条等平台的视频/图文链接，无水印下载。</p>
 						<p>本工具永久免费使用，无任何隐藏收费，也不提供付费解锁功能。如遇索要费用的行为，请勿相信。</p>
 						<p>我们仅将您粘贴的链接发送至解析服务器获取下载地址，不会收集、存储您的任何个人信息。解析服务器不保留任何请求日志。</p>
 						<p>如有问题或建议，请联系 youhuabujianye@gmail.com</p>
@@ -1623,6 +1829,15 @@
 		</div>
 	</div>
 
+	<!-- SEO 静态语义化说明区（脱离 Vue 渲染，确保百度/Google/Bing 等爬虫零 JS 即可抓取完整内容） -->
+	<footer class="seo-footer">
+		<h1>天天下载 — 免费多平台无水印视频与图集解析工具</h1>
+		<p>支持抖音去水印视频与图文下载、小红书无水印视频与高清图集提取、快手原画无水印解析、哔哩哔哩（B站）高清视频提取、今日头条高清视频直链下载。无需登录注册，复制分享口令或链接即可在线极速解析。</p>
+		<noscript>
+			<p>提示：请开启浏览器 JavaScript 以使用在线解析与一键下载功能。</p>
+		</noscript>
+	</footer>
+
 	<!-- Vue 3 CDN (Production Build) -->
 	<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
 	<script>
@@ -1636,7 +1851,8 @@
 			douyin: `<svg class="platform-logo" viewBox="0 0 1024 1024"><path d="M0 0m184.32 0l655.36 0q184.32 0 184.32 184.32l0 655.36q0 184.32-184.32 184.32l-655.36 0q-184.32 0-184.32-184.32l0-655.36q0-184.32 184.32-184.32Z" fill="#111111"></path><path d="M204.27776 670.59712a246.25152 246.25152 0 0 1 245.97504-245.97504v147.57888a98.49856 98.49856 0 0 0-98.38592 98.38592c0 48.34304 26.14272 100.352 83.54816 100.352 3.81952 0 93.55264-0.88064 93.55264-77.19936V134.35904h157.26592a133.31456 133.31456 0 0 0 133.12 132.99712l-0.13312 147.31264a273.152 273.152 0 0 1-142.62272-38.912l-0.06144 317.98272c0 146.00192-124.24192 224.77824-241.14176 224.77824-131.74784 0.03072-231.1168-106.56768-231.1168-247.92064z" fill="#FF4040"></path><path d="M164.92544 631.23456a246.25152 246.25152 0 0 1 245.97504-245.97504v147.57888a98.49856 98.49856 0 0 0-98.38592 98.38592c0 48.34304 26.14272 100.352 83.54816 100.352 3.81952 0 93.55264-0.88064 93.55264-77.19936V94.99648h157.26592a133.31456 133.31456 0 0 0 133.12 132.99712l-0.13312 147.31264a273.152 273.152 0 0 1-142.62272-38.912l-0.06144 317.98272c0 146.00192-124.24192 224.77824-241.14176 224.77824-131.74784 0.03072-231.1168-106.56768-231.1168-247.92064z" fill="#00F5FF"></path><path d="M410.91072 427.58144c-158.8224 20.15232-284.44672 222.72-154.112 405.00224 120.40192 98.47808 373.68832 41.20576 380.70272-171.85792l-0.17408-324.1472a280.7296 280.7296 0 0 0 142.88896 38.62528V261.2224a144.98816 144.98816 0 0 1-72.8064-54.82496 135.23968 135.23968 0 0 1-54.70208-72.45824h-123.66848l-0.08192 561.41824c-0.11264 78.46912-130.9696 106.41408-164.18816 30.2592-83.18976-39.77216-64.37888-190.9248 46.31552-192.57344z" fill="#FFFFFF"></path></svg>`,
 			kuaishou: `<svg class="platform-logo" viewBox="0 0 1024 1024"><path d="M0 0m184.32 0l655.36 0q184.32 0 184.32 184.32l0 655.36q0 184.32-184.32 184.32l-655.36 0q-184.32 0-184.32-184.32l0-655.36q0-184.32 184.32-184.32Z" fill="#FF6734"></path><path d="M716.8 225.28a81.92 81.92 0 1 0 81.92 81.92 82.01216 82.01216 0 0 0-81.92-81.92m0-71.68a153.6 153.6 0 1 1-153.6 153.6 153.6 153.6 0 0 1 153.6-153.6z" fill="#FFFFFF"></path><path d="M450.56 163.84a112.64 112.64 0 1 0 112.64 112.64 112.76288 112.76288 0 0 0-112.64-112.64m0-71.68a184.32 184.32 0 1 1-184.32 184.32 184.32 184.32 0 0 1 184.32-184.32z" fill="#FFFFFF"></path><path d="M532.48 563.2a81.92 81.92 0 0 0-81.92 81.92v92.16a81.92 81.92 0 0 0 81.92 81.92h194.56a81.92 81.92 0 0 0 81.92-81.92v-92.16a81.92 81.92 0 0 0-81.92-81.92h-194.56m0-71.68h194.56a153.77408 153.77408 0 0 1 153.6 153.6v92.16a153.77408 153.77408 0 0 1-153.6 153.6h-194.56a153.77408 153.77408 0 0 1-153.6-153.6v-92.16a153.77408 153.77408 0 0 1 153.6-153.6z" fill="#FFFFFF"></path><path d="M373.44256 691.2a20.28544 20.28544 0 0 0-10.32192-17.77664l-117.44256-67.11296a20.48 20.48 0 0 0-30.63808 17.77664v134.22592a20.48 20.48 0 0 0 30.63808 17.77664l117.44256-67.11296a20.28544 20.28544 0 0 0 10.32192-17.77664m71.68 0a92.3648 92.3648 0 0 1-46.4384 80.01536l-117.44256 67.11296A92.16 92.16 0 0 1 143.36 758.31296v-134.22592a92.16 92.16 0 0 1 137.8816-80.01536l117.44256 67.11296a92.3648 92.3648 0 0 1 46.4384 80.01536z" fill="#FFFFFF"></path></svg>`,
 			xiaohongshu: `<svg class="platform-logo" viewBox="0 0 1024 1024"><path d="M0 0m170.666667 0l682.666666 0q170.666667 0 170.666667 170.666667l0 682.666666q0 170.666667-170.666667 170.666667l-682.666666 0q-170.666667 0-170.666667-170.666667l0-682.666666q0-170.666667 170.666667-170.666667Z" fill="#FF2E4D"></path><path d="M229.248 452.992H181.632C185.813333 514.858667 170.666667 561.877333 170.666667 561.877333l25.6 46.506667c33.536-14.336 32.981333-155.434667 32.981333-155.434667v0.042667z m106.496 0s-0.853333 141.098667 32.981333 155.392l25.6-46.506667s-15.104-47.018667-11.008-108.928H335.744v0.042667z m-76.8 141.653333h-29.696c0 35.2 29.44 38.229333 29.44 38.229334h15.104c30.293333 0 31.658667-34.645333 31.658667-34.645334V391.082667h-46.506667v203.562666z m159.829333-99.029333h30.805334l-23.637334 48.128s-13.738667 26.965333 8.234667 28.074667h51.456l20.608-37.12h-25.6c-3.242667 0-5.461333-3.626667-3.84-6.4l38.229333-75.093334h-44.544l-2.730666 5.546667h-2.773334c-3.285333 0-5.504-3.584-3.84-6.357333l31.914667-61.312h-44.586667l-37.973333 76.458666s-13.738667 27.264 8.277333 28.074667z m6.613334 91.008s-5.76 0.597333-9.386667-3.285333l-23.04 44.330666s3.84 5.205333 11.52 5.205334h57.173333l24.533334-46.208H425.386667z" fill="#FFFFFF"></path><path d="M597.845333 452.992h29.44V405.674667h-105.088v47.317333h29.994667v135.296H508.16l-22.272 44.586667h156.501333v-44.586667h-44.544v-135.296z m210.389334 34.901333h-5.461334v-30.506666a51.712 51.712 0 0 0-51.712-51.712h-17.92v-14.592h-45.312V405.333333h-28.629333v46.208h28.629333v36.010667h-45.397333v46.506667h45.397333v98.730666h45.354667v-98.773333h62.421333c6.101333 0 11.050667 4.992 11.050667 11.008v48.725333h-43.178667a38.997333 38.997333 0 0 0 39.04 39.04h11.818667a38.954667 38.954667 0 0 0 39.04-39.04v-61.056a45.226667 45.226667 0 0 0-45.098667-44.842666z m-75.093334-36.010666h16.256a7.04 7.04 0 0 1 7.168 7.125333v28.885333h-23.424v-36.010666z" fill="#FFFFFF"></path><path d="M852.309333 428.202667a22.698667 22.698667 0 0 0-22.613333-22.528 22.656 22.656 0 0 0-22.528 22.528v22.570666h22.570667a22.528 22.528 0 0 0 22.570666-22.570666z" fill="#FFFFFF"></path></svg>`,
-			bilibili: `<svg class="platform-logo" viewBox="0 0 1024 1024"><path d="M0 0m184.32 0l655.36 0q184.32 0 184.32 184.32l0 655.36q0 184.32-184.32 184.32l-655.36 0q-184.32 0-184.32-184.32l0-655.36q0-184.32 184.32-184.32Z" fill="#EC5D85"></path><path d="M512 241.96096h52.224l65.06496-96.31744c49.63328-50.31936 89.64096 0.43008 63.85664 45.71136l-34.31424 51.5072c257.64864 5.02784 257.64864 43.008 257.64864 325.03808 0 325.94944 0 336.46592-404.48 336.46592S107.52 893.8496 107.52 567.90016c0-277.69856 0-318.80192 253.14304-324.95616l-39.43424-58.368c-31.26272-54.90688 37.33504-90.40896 64.68608-42.37312l60.416 99.80928c18.18624-0.0512 41.18528-0.0512 65.66912-0.0512z" fill="#EF85A7"></path><path d="M512 338.5856c332.8 0 332.8 0 332.8 240.64s0 248.39168-332.8 248.39168-332.8-7.75168-332.8-248.39168 0-240.64 332.8-240.64z" fill="#EC5D85"></path><path d="M281.6 558.08a30.72 30.72 0 0 1-27.47392-16.97792 30.72 30.72 0 0 1 13.73184-41.216l122.88-61.44a30.72 30.72 0 0 1 41.216 13.74208 30.72 30.72 0 0 1-13.74208 41.216l-122.88 61.44a30.59712 30.59712 0 0 1-13.73184 3.23584zM752.64 558.08a30.60736 30.60736 0 0 1-12.8512-2.83648l-133.12-61.44a30.72 30.72 0 0 1-15.04256-40.7552 30.72 30.72 0 0 1 40.76544-15.02208l133.12 61.44A30.72 30.72 0 0 1 752.64 558.08zM454.656 666.88a15.36 15.36 0 0 1-12.288-6.1952 15.36 15.36 0 0 1 3.072-21.49376l68.5056-50.91328 50.35008 52.62336a15.36 15.36 0 0 1-22.20032 21.23776l-31.5904-33.024-46.71488 34.72384a15.28832 15.28832 0 0 1-9.13408 3.04128z" fill="#EF85A7"></path><path d="M65.536 369.31584c15.03232 101.90848 32.84992 147.17952 44.544 355.328 14.63296 2.18112 177.70496 10.04544 204.05248-74.62912a16.14848 16.14848 0 0 0 1.64864-10.87488c-30.60736-80.3328-169.216-60.416-169.216-60.416s-10.36288-146.50368-11.49952-238.83776zM362.25024 383.03744l34.816 303.17568h34.64192L405.23776 381.1328zM309.52448 536.28928h45.48608l16.09728 158.6176-31.82592 1.85344zM446.86336 542.98624h45.80352V705.3312h-33.87392zM296.6016 457.97376h21.39136l5.2736 58.99264-18.91328 2.26304zM326.99392 457.97376h21.39136l2.53952 55.808-17.408 1.61792zM470.62016 459.88864h19.456v62.27968h-19.456zM440.23808 459.88864h22.20032v62.27968h-16.62976z" fill="#FFFFFF"></path><path d="M243.56864 645.51936a275.456 275.456 0 0 1-28.4672 23.74656 242.688 242.688 0 0 1-29.53216 17.52064 2.70336 2.70336 0 0 1-4.4032-1.95584 258.60096 258.60096 0 0 1-5.12-29.57312c-1.41312-12.1856-1.95584-25.68192-2.16064-36.36224 0-0.3072 0-2.5088 3.01056-1.90464a245.92384 245.92384 0 0 1 34.22208 9.5744 257.024 257.024 0 0 1 32.3584 15.17568c0.52224 0.256 2.51904 1.4848 0.09216 3.77856z" fill="#EB5480"></path><path d="M513.29024 369.31584c15.03232 101.90848 32.84992 147.17952 44.544 355.328 14.63296 2.18112 177.70496 10.04544 204.05248-74.62912a16.14848 16.14848 0 0 0 1.64864-10.87488c-30.60736-80.3328-169.216-60.416-169.216-60.416s-10.36288-146.50368-11.49952-238.83776zM810.00448 383.03744l34.816 303.17568h34.64192L852.992 381.1328zM757.27872 536.28928h45.48608l16.09728 158.6176-31.82592 1.85344zM894.6176 542.98624h45.80352V705.3312H906.5472zM744.35584 457.97376h21.39136l5.2736 58.99264-18.91328 2.26304zM774.74816 457.97376h21.39136l2.53952 55.808-17.408 1.61792zM918.3744 459.88864h19.456v62.27968h-19.456zM887.99232 459.88864h22.20032v62.27968h-16.62976z" fill="#FFFFFF"></path><path d="M691.32288 645.51936a275.456 275.456 0 0 1-28.4672 23.74656 242.688 242.688 0 0 1-29.53216 17.52064 2.70336 2.70336 0 0 1-4.4032-1.95584 258.60096 258.60096 0 0 1-5.12-29.57312c-1.41312-12.1856-1.95584-25.68192-2.16064-36.36224 0-0.3072 0-2.5088 3.01056-1.90464a245.92384 245.92384 0 0 1 34.22208 9.5744 257.024 257.024 0 0 1 32.3584 15.17568c0.52224 0.256 2.51904 1.4848 0.09216 3.77856z" fill="#EB5480"></path></svg>`
+			bilibili: `<svg class="platform-logo" viewBox="0 0 1024 1024"><path d="M0 0m184.32 0l655.36 0q184.32 0 184.32 184.32l0 655.36q0 184.32-184.32 184.32l-655.36 0q-184.32 0-184.32-184.32l0-655.36q0-184.32 184.32-184.32Z" fill="#EC5D85"></path><path d="M512 241.96096h52.224l65.06496-96.31744c49.63328-50.31936 89.64096 0.43008 63.85664 45.71136l-34.31424 51.5072c257.64864 5.02784 257.64864 43.008 257.64864 325.03808 0 325.94944 0 336.46592-404.48 336.46592S107.52 893.8496 107.52 567.90016c0-277.69856 0-318.80192 253.14304-324.95616l-39.43424-58.368c-31.26272-54.90688 37.33504-90.40896 64.68608-42.37312l60.416 99.80928c18.18624-0.0512 41.18528-0.0512 65.66912-0.0512z" fill="#EF85A7"></path><path d="M512 338.5856c332.8 0 332.8 0 332.8 240.64s0 248.39168-332.8 248.39168-332.8-7.75168-332.8-248.39168 0-240.64 332.8-240.64z" fill="#EC5D85"></path><path d="M281.6 558.08a30.72 30.72 0 0 1-27.47392-16.97792 30.72 30.72 0 0 1 13.73184-41.216l122.88-61.44a30.72 30.72 0 0 1 41.216 13.74208 30.72 30.72 0 0 1-13.74208 41.216l-122.88 61.44a30.59712 30.59712 0 0 1-13.73184 3.23584zM752.64 558.08a30.60736 30.60736 0 0 1-12.8512-2.83648l-133.12-61.44a30.72 30.72 0 0 1-15.04256-40.7552 30.72 30.72 0 0 1 40.76544-15.02208l133.12 61.44A30.72 30.72 0 0 1 752.64 558.08zM454.656 666.88a15.36 15.36 0 0 1-12.288-6.1952 15.36 15.36 0 0 1 3.072-21.49376l68.5056-50.91328 50.35008 52.62336a15.36 15.36 0 0 1-22.20032 21.23776l-31.5904-33.024-46.71488 34.72384a15.28832 15.28832 0 0 1-9.13408 3.04128z" fill="#EF85A7"></path><path d="M65.536 369.31584c15.03232 101.90848 32.84992 147.17952 44.544 355.328 14.63296 2.18112 177.70496 10.04544 204.05248-74.62912a16.14848 16.14848 0 0 0 1.64864-10.87488c-30.60736-80.3328-169.216-60.416-169.216-60.416s-10.36288-146.50368-11.49952-238.83776zM362.25024 383.03744l34.816 303.17568h34.64192L405.23776 381.1328zM309.52448 536.28928h45.48608l16.09728 158.6176-31.82592 1.85344zM446.86336 542.98624h45.80352V705.3312h-33.87392zM296.6016 457.97376h21.39136l5.2736 58.99264-18.91328 2.26304zM326.99392 457.97376h21.39136l2.53952 55.808-17.408 1.61792zM470.62016 459.88864h19.456v62.27968h-19.456zM440.23808 459.88864h22.20032v62.27968h-16.62976z" fill="#FFFFFF"></path><path d="M243.56864 645.51936a275.456 275.456 0 0 1-28.4672 23.74656 242.688 242.688 0 0 1-29.53216 17.52064 2.70336 2.70336 0 0 1-4.4032-1.95584 258.60096 258.60096 0 0 1-5.12-29.57312c-1.41312-12.1856-1.95584-25.68192-2.16064-36.36224 0-0.3072 0-2.5088 3.01056-1.90464a245.92384 245.92384 0 0 1 34.22208 9.5744 257.024 257.024 0 0 1 32.3584 15.17568c0.52224 0.256 2.51904 1.4848 0.09216 3.77856z" fill="#EB5480"></path><path d="M513.29024 369.31584c15.03232 101.90848 32.84992 147.17952 44.544 355.328 14.63296 2.18112 177.70496 10.04544 204.05248-74.62912a16.14848 16.14848 0 0 0 1.64864-10.87488c-30.60736-80.3328-169.216-60.416-169.216-60.416s-10.36288-146.50368-11.49952-238.83776zM810.00448 383.03744l34.816 303.17568h34.64192L852.992 381.1328zM757.27872 536.28928h45.48608l16.09728 158.6176-31.82592 1.85344zM894.6176 542.98624h45.80352V705.3312H906.5472zM744.35584 457.97376h21.39136l5.2736 58.99264-18.91328 2.26304zM774.74816 457.97376h21.39136l2.53952 55.808-17.408 1.61792zM918.3744 459.88864h19.456v62.27968h-19.456zM887.99232 459.88864h22.20032v62.27968h-16.62976z" fill="#FFFFFF"></path><path d="M691.32288 645.51936a275.456 275.456 0 0 1-28.4672 23.74656 242.688 242.688 0 0 1-29.53216 17.52064 2.70336 2.70336 0 0 1-4.4032-1.95584 258.60096 258.60096 0 0 1-5.12-29.57312c-1.41312-12.1856-1.95584-25.68192-2.16064-36.36224 0-0.3072 0-2.5088 3.01056-1.90464a245.92384 245.92384 0 0 1 34.22208 9.5744 257.024 257.024 0 0 1 32.3584 15.17568c0.52224 0.256 2.51904 1.4848 0.09216 3.77856z" fill="#EB5480"></path></svg>`,
+			toutiao: `<svg class="platform-logo" viewBox="0 0 1024 1024"><path d="M182.111 3.815H841.89a178.296 178.296 0 0 1 178.296 178.296V841.89a178.296 178.296 0 0 1-178.296 178.296H182.11A178.296 178.296 0 0 1 3.815 841.89V182.11A178.296 178.296 0 0 1 182.11 3.815z" fill="#FFFFFF"></path><path d="M841.889 1024H182.11A182.413 182.413 0 0 1 0 841.788V182.111A182.312 182.312 0 0 1 182.111 0H841.89A182.312 182.312 0 0 1 1024 182.111v659.677A182.413 182.413 0 0 1 841.889 1024zM182.11 7.73A174.582 174.582 0 0 0 7.731 182.111v659.677a174.582 174.582 0 0 0 174.38 174.482H841.89a174.582 174.582 0 0 0 174.38-174.482V182.111A174.582 174.582 0 0 0 841.89 7.731z" fill="#DBDCDC"></path><path d="M0 220.26V841.89c0 5.32 0 10.641 0.803 15.862L1024 799.824V182.111c0-5.32 0-10.641-0.703-15.862z" fill="#E62318"></path><path d="M915.275 578.158v-48.59l-153.399 8.735v-24.396l-73.989 4.217v24.395l-153.4 8.734v48.49l153.4-8.634v106.918l73.99-4.217V586.893l153.398-8.735z" fill="#FFFFFF"></path><path d="M534.387 488.609v48.489l52.706-3.012v-0.1l135.931-66.962 138.943 51.2v0.201l53.308-3.112v-48.49l-35.539 2.008L787.978 435l121.575-59.834v-84.028l-73.99 4.217L665.4 304.99v-0.1l-59.03-28.11-75.395 119.768 62.544 22.689 40.258-63.95 201.788-11.445v11.746l-112.64 55.416-87.442-32.225-29.515 45.076 52.003 19.175-88.546 43.57-35.037 2.008zM875.32 594.723l-73.989 4.116 54.011 89.65 73.889-4.116-53.91-89.65zM534.69 706.861l73.989-4.116 49.292-95.573-73.989 4.216-49.292 95.473zM358.902 598.036l58.529 114.849 81.92-4.217-58.529-114.748-81.92 4.116z m-76.9-84.028l-59.834-75.395-81.619 4.618 59.733 75.294 81.72-4.517z m0-94.168l-59.834-75.294-81.619 4.518 59.733 75.394 81.72-4.618z" fill="#FFFFFF"></path><path d="M352.477 584.684l136.634-7.73v-48.49l-90.755 5.12V320.151l-73.989 4.116V537.8l-216.044 12.348v48.49l150.287-8.534-66.56 87.642-81.719 4.719v48.49l137.136-7.932v-0.2l105.01-138.14z" fill="#FFFFFF"></path></svg>`
 		};
 
 		function initApp() {
@@ -1673,11 +1889,51 @@
 						};
 					};
 
-					// 示例数据 (1:1 来自 DouMP)
-					const exampleLinks = [
-						{ label: '视频示例', text: '9.41 复制打开抖音，看看【逐花归海.的作品】"我对流星许愿,希望你永远快乐·" ᴵ ʷⁱˢʰ ... https://v.douyin.com/fE0ws7peYUU/ C@u.sR xsE:/ 10/04 ' },
-						{ label: '图片示例', text: '9.76 复制打开抖音，看看【ঞᐝ完美の的图文作品】好看的图片当然要分享给好看的你呀·ᰔ ᩚ。# 治愈... https://v.douyin.com/33ROpXvhz3Y/ 10/12 LWZ:/ j@C.hb' }
+					// 默认 5 平台示例数据（打开即展示，onMounted 时从 /api/examples 动态刷新）
+					const DEFAULT_EXAMPLES = [
+						{ platform: 'douyin', platformName: '抖音', type: 'video', label: '抖音视频示例', text: '2.00 复制打开抖音，看看【绿肥红的作品】你的社交动态不再更新了 我该从哪里了解你的现状  https://v.douyin.com/F_MnkKBlxaE/ :7pm 07/10 wfo:/ v@f.BG' },
+						{ platform: 'douyin', platformName: '抖音', type: 'image', label: '抖音图片示例', text: '0.74 复制打开抖音，看看【予卿繁.的图文作品】黑色背景图评论区自取。# 如果这个宇宙的结局是注定... https://v.douyin.com/TpT3OXPGd4w/ E@H.ip :2pm Cuf:/ 06/11' },
+						{ platform: 'xiaohongshu', platformName: '小红书', type: 'video', label: '小红书视频示例', text: '模特的无痕内衣选择？舒适塑形不突兀 夏天小透衫的救... https://xhslink.cn/o/3OL9bl6jCKY 保留口令，直达【小红书】围观~' },
+						{ platform: 'xiaohongshu', platformName: '小红书', type: 'image', label: '小红书图片示例', text: '就这样萌萌的看着你呀 小比格 https://xhslink.cn/o/4twzQsvcpLk 【小红书】里有精彩内容，快去瞧瞧！' },
+						{ platform: 'kuaishou', platformName: '快手', type: 'video', label: '快手视频示例', text: 'https://v.kuaishou.com/nLHP9uAF "喜爱度激励计划 "跨次元应援中国队 "微胖 "换装 该作品在快手被播放过46.7万次，点击链接，打开【快手】直接观看！' },
+						{ platform: 'kuaishou', platformName: '快手', type: 'image', label: '快手图片示例', text: 'https://v.kuaishou.com/JZKPUPxy 眉目伊始 可爱如斯 该作品在快手被播放过1719次，点击链接，打开【快手】直接观看！' },
+						{ platform: 'bilibili', platformName: '哔哩哔哩', type: 'video', label: '哔哩哔哩视频示例', text: '【落花情-哔哩哔哩】 https://b23.tv/BV1NUnR6DEBT' },
+						{ platform: 'toutiao', platformName: '今日头条', type: 'video', label: '今日头条视频示例', text: '【我感觉他说得好像没问题，但又总觉得哪里不太对……】点击链接打开👉 https://m.toutiao.com/is/NcSYy5s7pEI/' }
 					];
+
+					const groupExamplesByPlatform = (list) => {
+						const map = {};
+						const groups = [];
+						(list || []).forEach(item => {
+							if (!map[item.platform]) {
+								map[item.platform] = {
+									platform: item.platform,
+									platformName: item.platformName || item.platform,
+									items: []
+								};
+								groups.push(map[item.platform]);
+							}
+							map[item.platform].items.push({
+								type: item.type,
+								shortLabel: item.type === 'image' ? '图片' : '视频',
+								label: item.label,
+								text: item.text
+							});
+						});
+						return groups;
+					};
+
+					const exampleGroups = ref(groupExamplesByPlatform(DEFAULT_EXAMPLES));
+
+					const fetchExamples = async () => {
+						try {
+							const res = await fetch('/api/examples');
+							const data = await res.json();
+							if (res.ok && data.success && Array.isArray(data.data) && data.data.length > 0) {
+								exampleGroups.value = groupExamplesByPlatform(data.data);
+							}
+						} catch (e) {}
+					};
 
 					// 获取或初始化 OpenID
 					const getOpenId = () => {
@@ -1744,8 +2000,9 @@
 						shareText.value = '';
 					};
 
-					const useExample = (index) => {
-						shareText.value = exampleLinks[index].text;
+					const useExample = (text) => {
+						if (!text) return;
+						shareText.value = text;
 						parseVideo();
 					};
 
@@ -1971,7 +2228,7 @@
 					};
 
 					const formatPlatformName = (p) => {
-						const map = { douyin: '抖音', kuaishou: '快手', xiaohongshu: '小红书', bilibili: 'B站' };
+						const map = { douyin: '抖音', kuaishou: '快手', xiaohongshu: '小红书', bilibili: 'B站', toutiao: '今日头条' };
 						return map[p] || '其他';
 					};
 
@@ -1984,6 +2241,7 @@
 
 					onMounted(() => {
 						isLoaded.value = true;
+						fetchExamples();
 
 						// 提取 URL 中的 shareText 参数 (?shareText=... 或 #index?shareText=...)
 						const urlParams = new URLSearchParams(window.location.search);
@@ -2030,6 +2288,7 @@
 						lightbox,
 						toast,
 						svgLogos,
+						exampleGroups,
 						videoProxySrc,
 						selectedCount,
 						goToPage,
