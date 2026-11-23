@@ -89,7 +89,7 @@ const EXAMPLE_LINKS = [
 		platformName: '快手',
 		type: 'video',
 		label: '快手视频示例',
-		text: 'https://v.kuaishou.com/KpIapZUP 《叮咚》前奏一响全场沸腾，哪怕突发小意外也挡不住这姐的千禧年活力！"徐怀钰1128绍兴诸暨演唱会 "徐怀钰绍兴演唱会 "叮咚 该作品在快手被播放过379万次，点击链接，打开【快手】直接观看！'
+		text: 'https://v.kuaishou.com/JUezWDe1 260904 KBS音乐银行上班路 演出顺利！身体健康最重要！"沈佳润 "沈佳润Nina "沈佳润二专whynotme 该作品在快手被播放过314.2万次，点击链接，打开【快手】直接观看！'
 	},
 	{
 		platform: 'kuaishou',
@@ -103,14 +103,14 @@ const EXAMPLE_LINKS = [
 		platformName: '哔哩哔哩',
 		type: 'video',
 		label: '哔哩哔哩视频示例',
-		text: '【宅女在家大肆燃烧卡路里🔥-哔哩哔哩】 https://b23.tv/uXDA7WY'
+		text: '【【LCK女团】《Whiplash》视觉盛宴-哔哩哔哩】 https://b23.tv/CXsCLfp'
 	},
 	{
 		platform: 'toutiao',
 		platformName: '今日头条',
 		type: 'video',
 		label: '今日头条视频示例',
-		text: '【我感觉他说得好像没问题，但又总觉得哪里不太对……】点击链接打开👉 https://m.toutiao.com/is/NcSYy5s7pEI/'
+		text: '【立冬北京下雪啦~~还蛮美丽冻人的~~那就就骗我一次一下叭~~貌似超适合...】 点击链接打开👉 https://m.toutiao.com/is/NxDNuRHwULU/ NxDNuRHwULU` Axw:/ q@e.Ox :2am 复制此条消息，打开「今日头条APP」或「今日头条极速版APP」后直接查看~'
 	}
 ]
 
@@ -449,14 +449,30 @@ async function parseToutiao(shareUrl) {
 		finalUrl.match(/[?&](?:group_id|item_id)=(\d+)/)?.[1]
 	if (!itemId) throw new Error('无法从链接中提取今日头条视频 ID')
 
-	const infoResp = await fetch(`https://m.toutiao.com/i${itemId}/info/v2/`, {
-		headers: {
-			'User-Agent': MOBILE_UA,
-			Referer: `https://m.toutiao.com/video/${itemId}/`
+	const isFromAweme = /from_aweme=1|aweme_sdk_share/i.test(finalUrl)
+	let info = null
+	if (!isFromAweme) {
+		const infoResp = await fetch(`https://m.toutiao.com/i${itemId}/info/v2/`, {
+			headers: {
+				'User-Agent': MOBILE_UA,
+				Referer: `https://m.toutiao.com/video/${itemId}/`
+			}
+		})
+		info = (await infoResp.json())?.data || null
+	}
+
+	// 兜底：抖音同步到今日头条的小视频（from_aweme=1 或 info/v2 返回空）自动复用抖音解析
+	if (!info) {
+		try {
+			const awemeRes = await parseDouyin(`https://www.iesdouyin.com/share/video/${itemId}/`)
+			if (awemeRes && awemeRes.project?.url_list?.length > 0) {
+				return { ...awemeRes, platform: 'toutiao' }
+			}
+		} catch {
+			// 抖音源兜底失败则抛出头条标准错误
 		}
-	})
-	const info = (await infoResp.json())?.data
-	if (!info) throw new Error('无法获取今日头条内容数据')
+		throw new Error('无法获取今日头条内容数据')
+	}
 	if (!info.video_id && !info.play_auth_token_v2 && !info.play_url_list?.length) {
 		const err = new Error('暂不支持解析文章类型内容，仅支持视频')
 		err.isUserFacing = true

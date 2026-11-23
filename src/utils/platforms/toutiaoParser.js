@@ -1,5 +1,6 @@
 const axios = require('axios')
 const { resolveRedirectUrl } = require('../resolveRedirect')
+const DouyinParser = require('./douyinParser')
 
 const MOBILE_UA =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
@@ -36,18 +37,35 @@ class ToutiaoParser {
 		const itemId = idMatch[1]
 		console.log('[ToutiaoParser] 提取到的 Item ID:', itemId)
 
-		// 1. 请求 m.toutiao.com/i{itemId}/info/v2/ 获取完整视频元数据及点播播放凭证
-		const infoUrl = `https://m.toutiao.com/i${itemId}/info/v2/`
-		const infoResp = await axios.get(infoUrl, {
-			headers: {
-				'User-Agent': MOBILE_UA,
-				Referer: `https://m.toutiao.com/video/${itemId}/`
-			},
-			timeout: 10000
-		})
+		const isFromAweme = /from_aweme=1|aweme_sdk_share/i.test(finalUrl)
 
-		const info = infoResp.data?.data
+		// 1. 若非抖音同步小视频，优先请求 m.toutiao.com/i{itemId}/info/v2/ 获取完整视频元数据
+		let info = null
+		if (!isFromAweme) {
+			const infoUrl = `https://m.toutiao.com/i${itemId}/info/v2/`
+			const infoResp = await axios.get(infoUrl, {
+				headers: {
+					'User-Agent': MOBILE_UA,
+					Referer: `https://m.toutiao.com/video/${itemId}/`
+				},
+				timeout: 10000
+			})
+			info = infoResp.data?.data || null
+		}
+
+		// 2. 兜底：抖音同步到今日头条的小视频（from_aweme=1 或 info/v2 返回空）自动走抖音 slidesinfo 接口
 		if (!info) {
+			try {
+				const douyinParser = new DouyinParser()
+				const awemeRes = await douyinParser.parseUrl(
+					`https://www.iesdouyin.com/share/video/${itemId}/`
+				)
+				if (awemeRes && awemeRes.project?.url_list?.length > 0) {
+					return { ...awemeRes, platform: 'toutiao' }
+				}
+			} catch (awemeErr) {
+				console.warn('[ToutiaoParser] 抖音同步源兜底失败:', awemeErr.message)
+			}
 			throw new Error('无法获取今日头条内容数据')
 		}
 
