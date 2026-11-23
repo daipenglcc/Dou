@@ -187,11 +187,15 @@ router.get('/download-stream', async (ctx) => {
 	}
 
 	try {
+		const reqHeaders = {
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+		}
+		if (/bilivideo\.|hdslb\.com|akamaized\.net/i.test(url)) {
+			reqHeaders.Referer = 'https://www.bilibili.com/'
+		}
 		const response = await axios.get(url, {
 			responseType: 'stream',
-			headers: {
-				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-			},
+			headers: reqHeaders,
 			timeout: 15 * 1000
 		})
 

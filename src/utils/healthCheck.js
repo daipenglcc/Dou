@@ -5,6 +5,7 @@ const { EXAMPLE_LINKS } = require('./examples')
 
 const REPORT_EMAIL = 'youhuabujianye@gmail.com'
 const MAIL_FROM = '2808707765@qq.com'
+const WORKER_PARSE_URL = process.env.HEALTH_CHECK_PARSE_URL || 'https://download.vues.cn/api/parse'
 
 // 各平台自检测试用例（直接复用 EXAMPLE_LINKS，一处维护）
 const TEST_CASES = EXAMPLE_LINKS.map((item) => {
@@ -19,20 +20,27 @@ const TEST_CASES = EXAMPLE_LINKS.map((item) => {
 
 /**
  * 校验解析出的媒体直链是否可正常访问且非 HTML 页面
+ * 部分 CDN（如阿里云 OSS / rednotecdn）不支持 HEAD 请求会返回 404/405，自动降级用 Range GET 探测
  */
 async function checkMediaUrl(url) {
 	if (!url) return { ok: false, reason: '地址为空' }
-	try {
-		const resp = await axios.head(url, {
-			headers: {
-				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-			},
-			maxRedirects: 5,
-			timeout: 6000,
-			validateStatus: () => true
-		})
+	const baseHeaders = {
+		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+	}
+	if (/bilivideo\.|hdslb\.com|akamaized\.net/i.test(url)) {
+		baseHeaders.Referer = 'https://www.bilibili.com/'
+	}
+
+	const parseResp = (resp) => {
 		const contentType = resp.headers['content-type'] || ''
-		const contentLength = resp.headers['content-length']
+		let size = resp.headers['content-length']
+			? parseInt(resp.headers['content-length'], 10)
+			: null
+		const contentRange = resp.headers['content-range'] || ''
+		const totalMatch = contentRange.match(/\/(\d+)$/)
+		if (totalMatch) {
+			size = parseInt(totalMatch[1], 10)
+		}
 		if (resp.status >= 200 && resp.status < 300) {
 			if (contentType.includes('text/html')) {
 				return {
@@ -46,10 +54,31 @@ async function checkMediaUrl(url) {
 				ok: true,
 				status: resp.status,
 				contentType: contentType.split(';')[0],
-				size: contentLength ? parseInt(contentLength, 10) : null
+				size
 			}
 		}
 		return { ok: false, status: resp.status, contentType, reason: `HTTP ${resp.status}` }
+	}
+
+	try {
+		const headResp = await axios.head(url, {
+			headers: baseHeaders,
+			maxRedirects: 5,
+			timeout: 6000,
+			validateStatus: () => true
+		})
+		const headResult = parseResp(headResp)
+		if (headResult.ok) return headResult
+
+		// HEAD 失败（如 rednotecdn 禁用 HEAD 返回 404/405）时，降级用 Range GET 探测前 1KB
+		const getResp = await axios.get(url, {
+			headers: { ...baseHeaders, Range: 'bytes=0-1023' },
+			maxRedirects: 5,
+			timeout: 8000,
+			responseType: 'arraybuffer',
+			validateStatus: () => true
+		})
+		return parseResp(getResp)
 	} catch (e) {
 		return { ok: false, reason: e.message }
 	}
@@ -88,6 +117,31 @@ function escapeHtml(str) {
 }
 
 /**
+ * 通过线上实际解析入口（Cloudflare Worker）执行解析；若显式关闭则走本地解析器
+ */
+async function parseViaProductionOrLocal(item, processor) {
+	if (process.env.HEALTH_CHECK_LOCAL === '1') {
+		const parser = processor.parsers[item.platform]
+		return parser ? await parser.parseUrl(item.url) : await processor.parseShareUrl(item.url)
+	}
+
+	const resp = await axios.post(
+		WORKER_PARSE_URL,
+		{ shareText: item.url, direct: 1 },
+		{
+			headers: { 'Content-Type': 'application/json' },
+			timeout: 15000,
+			validateStatus: () => true
+		}
+	)
+	const body = resp.data
+	if (resp.status === 200 && body?.success && body?.data) {
+		return body.data
+	}
+	throw new Error(body?.error || `解析接口返回异常 (HTTP ${resp.status})`)
+}
+
+/**
  * 执行全部平台的解析自检（串行逐项检测，避免同平台并发请求触发风控）
  */
 async function runHealthCheck() {
@@ -98,10 +152,7 @@ async function runHealthCheck() {
 	for (const item of TEST_CASES) {
 		const t0 = Date.now()
 		try {
-			const parser = processor.parsers[item.platform]
-			const data = parser
-				? await parser.parseUrl(item.url)
-				: await processor.parseShareUrl(item.url)
+			const data = await parseViaProductionOrLocal(item, processor)
 			const durationMs = Date.now() - t0
 			const project = data?.project || {}
 			const urlList = Array.isArray(project.url_list) ? project.url_list : []

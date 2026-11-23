@@ -40,6 +40,8 @@ const ALLOWED_HOST_SUFFIXES = [
 	'ixigua.com',
 	'xhscdn.com',
 	'xiaohongshu.com',
+	'rednotecdn.com',
+	'rednote.com',
 	'yximgs.com',
 	'kuaishou.com',
 	'kwimgs.com',
@@ -734,9 +736,19 @@ export default {
 					timestamp: new Date().toISOString()
 				})
 			} catch (error) {
-				const msg = error.isUserFacing
+				const platformNames = {
+					douyin: '抖音',
+					xiaohongshu: '小红书',
+					kuaishou: '快手',
+					bilibili: '哔哩哔哩',
+					toutiao: '今日头条'
+				}
+				const isUserMsg =
+					error.isUserFacing ||
+					/已被.*删除|不存在|下架|私密|无权访问|暂时无法浏览/.test(error.message || '')
+				const msg = isUserMsg
 					? error.message
-					: `抱歉，该平台近期风控比较严，暂时没法解析啦，建议先试试其他平台~`
+					: `抱歉，${platformNames[platform] || '该平台'}近期风控比较严，暂时没法解析啦，建议先试试其他平台~`
 				return jsonResponse(
 					{
 						success: false,
