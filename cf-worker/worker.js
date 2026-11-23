@@ -73,14 +73,14 @@ const EXAMPLE_LINKS = [
 		platformName: '小红书',
 		type: 'video',
 		label: '小红书视频示例',
-		text: '小狗区别对待…… 爸爸：“小狗的爱也是分等级的是吧... https://xhslink.cn/o/6bhmoifHIPa 存好口令，直达【小红书】瞅瞅~'
+		text: '不结婚以后老了谁照顾你？ https://xhslink.cn/o/3kg7wxaSFW7 先复制一下，打开【小红书】看看这篇好文！'
 	},
 	{
 		platform: 'xiaohongshu',
 		platformName: '小红书',
 		type: 'image',
 		label: '小红书图片示例',
-		text: '“十岁那年，丢失的救命钱” https://xhslink.cn/o/89BaFwm4brA 存下这段话，去【小红书】速览笔记~'
+		text: '“ios27 https://xhslink.cn/o/1biSEj1qpIB 复制后直接打开【小红书】，笔记就在那里等你。'
 	},
 	{
 		platform: 'kuaishou',
