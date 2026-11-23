@@ -1,9 +1,11 @@
 const axios = require('axios')
 const { resolveRedirectUrl } = require('../resolveRedirect')
 
-// 蜘蛛 User-Agent 用于绕过抖音 Web WAF 验证
+// 蜘蛛 User-Agent 池（用于绕过抖音 Web WAF 验证，兼容海外 Vercel 与国内节点）
+const GOOGLEBOT_UA = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
 const SPIDER_UA =
 	'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)'
+const BINGBOT_UA = 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)'
 const MOBILE_UA =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
 
@@ -315,27 +317,56 @@ class DouyinParser {
 
 	/**
 	 * 从 douyin.com Web 页面提取 schema.org JSON-LD 图文数据
+	 * 依次尝试 Googlebot / Baiduspider / Bingbot（无假 Cookie 优先），兼容海外 Vercel 与国内 IP
 	 */
 	async tryParseJsonLd(videoId, pathsToTry = ['note', 'video']) {
+		const headerProfiles = [
+			{
+				name: 'Googlebot',
+				headers: { 'User-Agent': GOOGLEBOT_UA }
+			},
+			{
+				name: 'Baiduspider',
+				headers: { 'User-Agent': SPIDER_UA, Referer: 'https://www.douyin.com/' }
+			},
+			{
+				name: 'Bingbot',
+				headers: { 'User-Agent': BINGBOT_UA }
+			},
+			{
+				name: 'Baiduspider+Cookie',
+				headers: {
+					'User-Agent': SPIDER_UA,
+					Referer: 'https://www.douyin.com/',
+					Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
+				}
+			}
+		]
+
 		for (const pathType of pathsToTry) {
 			const webUrl = `https://www.douyin.com/${pathType}/${videoId}`
-			console.log(`[DouyinParser] 尝试 JSON-LD (${pathType} 路径: ${webUrl})...`)
-
-			try {
-				const resp = await axios.get(webUrl, {
-					headers: {
-						'User-Agent': SPIDER_UA,
-						Referer: 'https://www.douyin.com/',
-						Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
-					},
-					timeout: 8000
-				})
-				const html = resp.data || ''
-				const jsonLdMatch = html.match(
-					/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
+			for (const profile of headerProfiles) {
+				console.log(
+					`[DouyinParser] 尝试 JSON-LD (${pathType} / ${profile.name}: ${webUrl})...`
 				)
+				try {
+					const resp = await axios.get(webUrl, {
+						headers: profile.headers,
+						timeout: 8000,
+						validateStatus: () => true
+					})
+					const html = typeof resp.data === 'string' ? resp.data : ''
+					const jsonLdMatch = html.match(
+						/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
+					)
 
-				if (jsonLdMatch) {
+					if (!jsonLdMatch) {
+						console.log(
+							`[DouyinParser] JSON-LD (${pathType}/${profile.name}) 无 ld+json, status=${resp.status}, len=${html.length}`
+						)
+						continue
+					}
+
 					for (const m of jsonLdMatch) {
 						const content = m
 							.replace(/<script[^>]*>/, '')
@@ -401,7 +432,7 @@ class DouyinParser {
 								}
 
 								console.log(
-									`[DouyinParser] JSON-LD (${pathType}) 解析完成: ${resultObj.project.title} (${images.length} 张图)`
+									`[DouyinParser] JSON-LD (${pathType}/${profile.name}) 解析完成: ${resultObj.project.title} (${images.length} 张图)`
 								)
 								return resultObj
 							}
@@ -409,9 +440,12 @@ class DouyinParser {
 							// 忽略单个 JSON 解析异常
 						}
 					}
+				} catch (cErr) {
+					console.log(
+						`[DouyinParser] JSON-LD (${pathType}/${profile.name}) 提取失败:`,
+						cErr.message
+					)
 				}
-			} catch (cErr) {
-				console.log(`[DouyinParser] JSON-LD (${pathType}) 提取失败:`, cErr.message)
 			}
 		}
 		return null
