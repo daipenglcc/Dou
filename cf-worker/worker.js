@@ -589,7 +589,7 @@ async function parseBilibili(shareUrl) {
 
 // ── 统一入口 ─────────────────────────────────────────────
 export default {
-	async fetch(request) {
+	async fetch(request, env, ctx) {
 		if (request.method === 'OPTIONS') {
 			return new Response(null, { status: 204, headers: CORS_HEADERS })
 		}
@@ -706,6 +706,25 @@ export default {
 
 				if (!isDirect) {
 					wrapUrlsWithProxy(videoInfo, `${reqUrl.origin}/api/proxyFile?url=`)
+				}
+
+				// 异步上报解析记录到主站数据库（0ms 额外延迟，不阻塞返回）
+				if (body.openid && ctx && typeof ctx.waitUntil === 'function') {
+					ctx.waitUntil(
+						fetch(`${FALLBACK_ORIGIN}/api/records`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({
+								openid: body.openid,
+								platform: videoInfo.platform || platform || 'unknown',
+								media_type: videoInfo.project?.type || 'unknown',
+								url: inputText,
+								title: videoInfo.project?.title || videoInfo.project?.desc || ''
+							})
+						}).catch(() => {
+							// 忽略记录上报失败，不影响主解析流程
+						})
+					)
 				}
 
 				return jsonResponse({

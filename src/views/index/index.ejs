@@ -1947,11 +1947,12 @@
 						return groups;
 					};
 
+					const WORKER_BASE = 'https://download.vues.cn';
 					const exampleGroups = ref([]);
 
 					const fetchExamples = async () => {
 						try {
-							const res = await fetch('/api/examples');
+							const res = await fetch(`${WORKER_BASE}/api/examples`);
 							const data = await res.json();
 							if (res.ok && data.success && Array.isArray(data.data) && data.data.length > 0) {
 								exampleGroups.value = groupExamplesByPlatform(data.data);
@@ -1986,12 +1987,21 @@
 						}
 					};
 
-					// 视频代理 Src
-					const videoProxySrc = computed(() => {
+					// 原始视频直链
+					const rawVideoUrl = computed(() => {
 						if (parseResult.value?.project?.type === 'video') {
 							return parseResult.value.project?.url_list?.[0] || '';
 						}
 						return '';
+					});
+
+					// 视频播放 Src（B 站防盗链走 Cloudflare 代理，其他平台直连）
+					const videoProxySrc = computed(() => {
+						if (!rawVideoUrl.value) return '';
+						if (parseResult.value?.platform === 'bilibili') {
+							return `${WORKER_BASE}/api/proxyFile?url=${encodeURIComponent(rawVideoUrl.value)}`;
+						}
+						return rawVideoUrl.value;
 					});
 
 					// 已选图片数量
@@ -2042,7 +2052,7 @@
 						const openid = getOpenId();
 
 						try {
-							const res = await fetch('/api/parse', {
+							const res = await fetch(`${WORKER_BASE}/api/parse`, {
 								method: 'POST',
 								headers: { 'Content-Type': 'application/json' },
 								body: JSON.stringify({ shareText: text, openid, direct: 1 })
@@ -2150,12 +2160,9 @@
 						};
 					};
 
-					// 国内高速下载中转节点（腾讯云 SCF 广州区）
-					const DOWNLOAD_PROXY_ORIGIN = 'https://download.vues.cn';
-
 					// 下载功能
 					const downloadVideo = () => {
-						if (!videoProxySrc.value) {
+						if (!rawVideoUrl.value) {
 							showToast('视频地址无效');
 							return;
 						}
@@ -2169,7 +2176,7 @@
 							return;
 						}
 						const title = parseResult.value?.project?.title || 'video';
-						const downloadUrl = `${DOWNLOAD_PROXY_ORIGIN}/api/download-stream?url=${encodeURIComponent(videoProxySrc.value)}&title=${encodeURIComponent(title)}`;
+						const downloadUrl = `${WORKER_BASE}/api/download-stream?url=${encodeURIComponent(rawVideoUrl.value)}&title=${encodeURIComponent(title)}`;
 						window.open(downloadUrl, '_blank');
 					};
 
@@ -2188,8 +2195,8 @@
 									res = await fetch(img.url);
 									if (!res.ok) throw new Error('direct fetch failed');
 								} catch (corsErr) {
-									// 直连触发跨域限制时自动降级走国内高速下载节点
-									res = await fetch(`${DOWNLOAD_PROXY_ORIGIN}/api/proxyFile?url=${encodeURIComponent(img.url)}`);
+									// 直连触发跨域限制时自动降级走 Cloudflare 代理
+									res = await fetch(`${WORKER_BASE}/api/proxyFile?url=${encodeURIComponent(img.url)}`);
 								}
 								const blob = await res.blob();
 								const blobUrl = URL.createObjectURL(blob);

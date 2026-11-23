@@ -445,6 +445,40 @@ router.get('/records', async (ctx) => {
 	}
 })
 
+/**
+ * POST /api/records
+ * 写入解析历史记录（供 Cloudflare Worker 边缘解析成功后异步上报）
+ */
+router.post('/records', async (ctx) => {
+	const { openid, platform, media_type, url, title } = ctx.request.body || {}
+	if (!openid || !url) {
+		ctx.status = 400
+		ctx.body = { success: false, error: '缺少 openid 或 url 参数' }
+		return
+	}
+
+	try {
+		const pool = getPool()
+		if (!pool) {
+			ctx.status = 500
+			ctx.body = { success: false, error: '数据库未连接' }
+			return
+		}
+
+		// 北京时间 (UTC+8)
+		const now = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 19).replace('T', ' ')
+		await pool.query(
+			'INSERT INTO parse_records (openid, platform, media_type, url, title, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
+			[openid, platform || 'unknown', media_type || 'unknown', url, title || '', now]
+		)
+		ctx.body = { success: true }
+	} catch (error) {
+		console.error('Failed to insert parse record:', error.message)
+		ctx.status = 500
+		ctx.body = { success: false, error: '写入记录失败' }
+	}
+})
+
 // 数据库查询页面
 router.get('/db', async (ctx) => {
 	ctx.type = 'html'
