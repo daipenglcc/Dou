@@ -112,3 +112,13 @@ MySQL（腾讯云 CynosDB），数据库名 `douyin_app`，通过 `src/utils/db.
 jsonStr = jsonStr.replace(/undefined/g, 'null')
 // 必要时处理尾逗号：.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']')
 ```
+
+## 【强制规范】Cloudflare Worker 同步自检
+
+生产环境的解析与下载服务（`https://download.vues.cn`）由 `cf-worker/worker.js` 直接承载（通过 `wrangler.jsonc` 自动部署到 Cloudflare Workers）。
+
+**强制要求**：每次修改以下任意内容时，**必须主动自检并同步更新 `cf-worker/worker.js`**，并在提交前核对两者完全一致：
+1. **示例链接配置**：修改 `src/utils/examples.js` 时，必须同步更新 `cf-worker/worker.js` 中的 `EXAMPLE_LINKS`。
+2. **平台解析逻辑**：修改 `src/utils/platforms/*Parser.js` 或 `src/utils/platformProcessor.js`（新增平台、调整域名匹配、修复风控/提取逻辑）时，必须同步更新 `cf-worker/worker.js` 中对应的解析函数与 `detectPlatform`。
+3. **代理下载与白名单**：修改 `src/routes/video.js` 中的 `/api/proxyFile`、`/api/download-stream`、Referer 规则、响应头或返回结构时，必须同步更新 `cf-worker/worker.js` 中对应的处理逻辑与 `ALLOWED_HOST_SUFFIXES`。
+4. **提交前自检**：执行 `git commit` 前，需检查 `src/` 与 `cf-worker/worker.js` 是否存在不同步的逻辑或配置，避免线上 `download.vues.cn` 与主站代码脱节。

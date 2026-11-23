@@ -66,7 +66,7 @@ const EXAMPLE_LINKS = [
 		platformName: '抖音',
 		type: 'image',
 		label: '抖音图片示例',
-		text: '9.76 复制打开抖音，看看【ঞᐝ完美の的图文作品】好看的图片当然要分享给好看的你呀·ᰔ ᩚ。# 治愈... https://v.douyin.com/33ROpXvhz3Y/ 10/12 LWZ:/ j@C.hb'
+		text: '6.15 复制打开抖音，看看【雪加鸭嘴兽大板砖积木的图文作品】值得长期不换的壁纸# 蓝猫图库 # 手机墙纸 # ... https://v.douyin.com/g5-Y27aXErc/ 01/15 kca:/ B@G.iP :8pm '
 	},
 	{
 		platform: 'xiaohongshu',

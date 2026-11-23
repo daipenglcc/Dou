@@ -63,3 +63,7 @@
 2. 实现 `parseUrl(shareUrl)` 方法，返回标准化的对象结构（包含 project、author、statistics 字段）。
 3. 在 `src/utils/platformProcessor.js` 的 `constructor` 和 `detectPlatform` 方法中注册新的解析器。
 4. 确保新解析器在发起请求时使用 `src/utils/userAgents.js` 中的 `getRandomUA()`。
+
+### 【强制规范】Cloudflare Worker 同步自检
+- 生产环境的 `/api/parse`、`/api/examples`、`/api/proxyFile`、`/api/download-stream` 由 `cf-worker/worker.js`（`https://download.vues.cn`）承载。
+- **凡修改 `src/utils/examples.js`、`src/utils/platformProcessor.js`、`src/utils/platforms/*` 或 `src/routes/video.js` 中的解析/代理逻辑，必须强制自检并同步更新 `cf-worker/worker.js`**，提交前务必核对两者一致，严禁只改 `src/` 漏改 `cf-worker/worker.js`。
