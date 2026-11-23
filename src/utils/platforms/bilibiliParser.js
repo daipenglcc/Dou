@@ -1,5 +1,6 @@
 const axios = require('axios')
 const { getRandomUA } = require('../userAgents')
+const { resolveRedirectUrl } = require('../resolveRedirect')
 
 /**
  * 哔哩哔哩平台解析器
@@ -13,24 +14,18 @@ class BilibiliParser {
 	async parseUrl(shareUrl) {
 		console.log('开始解析B站链接:', shareUrl)
 
-		// 第一步：跟随重定向（处理 b23.tv 短链）
+		// 第一步：若链接尚未包含 BV ID，仅通过 302 Location 轻量解析短链
 		let finalUrl = shareUrl
-		try {
-			const shareResp = await axios.get(shareUrl, {
-				headers: getRandomUA(),
-				maxRedirects: 5,
-				timeout: 10000
-			})
-			finalUrl = shareResp.request.res.responseUrl
-		} catch (e) {
-			// 如果已有标准 URL 格式，不需要跟随重定向
+		if (!/(?:\/video\/|[?&]bvid=|b23\.tv\/)(BV[a-zA-Z0-9]+)/.test(shareUrl)) {
+			finalUrl = await resolveRedirectUrl(shareUrl, { 'User-Agent': getRandomUA() })
 		}
 		console.log('最终链接:', finalUrl)
 
 		// 第二步：提取 BV id
-		// 支持格式：/video/BVxxx 或 /BVxxx 或 bvid=BVxxx
+		// 支持格式：/video/BVxxx 或 b23.tv/BVxxx 或 bvid=BVxxx
 		const bvMatch =
 			finalUrl.match(/\/video\/(BV[a-zA-Z0-9]+)/) ||
+			finalUrl.match(/b23\.tv\/(BV[a-zA-Z0-9]+)/) ||
 			finalUrl.match(/[?&]bvid=(BV[a-zA-Z0-9]+)/)
 		if (!bvMatch) {
 			throw new Error('无法从链接中提取视频ID')

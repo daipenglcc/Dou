@@ -1,4 +1,5 @@
 const axios = require('axios')
+const { resolveRedirectUrl } = require('../resolveRedirect')
 
 // 蜘蛛 User-Agent 用于绕过抖音 Web WAF 验证
 const SPIDER_UA =
@@ -21,16 +22,13 @@ class DouyinParser {
 	async parseUrl(shareUrl) {
 		console.log('[DouyinParser] 开始解析链接:', shareUrl)
 
-		// 1. 获取重定向后的真实链接
+		// 1. 若输入链接尚未包含作品 ID，仅通过 302 Location 轻量解析短链（不下载落地页 HTML）
 		let realUrl = shareUrl
-		try {
-			const shareResp = await axios.get(shareUrl, {
-				headers: { 'User-Agent': SPIDER_UA },
-				maxRedirects: 5
-			})
-			realUrl = shareResp.request?.res?.responseUrl || shareUrl
-		} catch (redirectErr) {
-			console.log('[DouyinParser] 获取重定向链接失败, 使用原链接:', redirectErr.message)
+		if (
+			!/(?:video|note|slides|share\/video|share\/note)\/\d+/.test(shareUrl) &&
+			!/(?:modal_id|aweme_id)=\d+/.test(shareUrl)
+		) {
+			realUrl = await resolveRedirectUrl(shareUrl, { 'User-Agent': MOBILE_UA })
 		}
 		console.log('[DouyinParser] 重定向后的真实链接:', realUrl)
 
@@ -64,7 +62,13 @@ class DouyinParser {
 
 		let data = null
 
-		// 3. 策略 A: 请求 iesdouyin slidesinfo 接口 (免 Cookie / 免签名，直接返回完整 aweme_details)
+		// 3. 图文作品优先直接走 Web JSON-LD（避免白跑必 403/空数据的策略 B、C，提速 2~3 秒）
+		if (isNoteUrl) {
+			const noteResult = await this.tryParseJsonLd(videoId, ['note'])
+			if (noteResult) return noteResult
+		}
+
+		// 4. 策略 A: 请求 iesdouyin slidesinfo 接口 (免 Cookie / 免签名，直接返回完整 aweme_details)
 		if (!isNoteUrl) {
 			const slidesApiUrl = `https://www.iesdouyin.com/web/api/v2/aweme/slidesinfo/?aweme_ids=%5B${videoId}%5D&request_source=1`
 			console.log('[DouyinParser] 尝试策略 A: 请求 slidesinfo API:', slidesApiUrl)
@@ -93,10 +97,16 @@ class DouyinParser {
 			}
 		}
 
-		// 4. 策略 B: 请求 aweme/detail API (带 aid=6383 & device_platform=webapp)
+		// 5. 策略 B: 兜底尝试 douyin.com Web JSON-LD（处理未带 /note/ 标识但实际是图文的作品）
+		if (!data && !isNoteUrl) {
+			const ldResult = await this.tryParseJsonLd(videoId, ['note', 'video'])
+			if (ldResult) return ldResult
+		}
+
+		// 6. 策略 C: 请求 aweme/detail API（历史兜底）
 		if (!data) {
 			const detailApiUrl = `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}&aid=6383&device_platform=webapp`
-			console.log('[DouyinParser] 尝试策略 B: 请求 detail API:', detailApiUrl)
+			console.log('[DouyinParser] 尝试策略 C: 请求 detail API:', detailApiUrl)
 
 			try {
 				const apiResp = await axios.get(detailApiUrl, {
@@ -105,34 +115,31 @@ class DouyinParser {
 						Referer: 'https://www.douyin.com/',
 						Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
 					},
-					timeout: 8000
+					timeout: 6000
 				})
 				if (apiResp.data && apiResp.data.aweme_detail) {
-					console.log('[DouyinParser] 策略 B 成功获取到 aweme_detail 对象')
+					console.log('[DouyinParser] 策略 C 成功获取到 aweme_detail 对象')
 					data = apiResp.data.aweme_detail
 				} else {
 					const filterReason = apiResp.data?.filter_detail?.filter_reason || ''
 					console.log(
-						`[DouyinParser] 策略 B API 未直接返回 aweme_detail, filter_reason: "${filterReason}"`
+						`[DouyinParser] 策略 C API 未直接返回 aweme_detail, filter_reason: "${filterReason}"`
 					)
 					if (filterReason === 'images_base') {
-						console.log(
-							'[DouyinParser] 识别到 filter_reason="images_base"，确认该作品为图文作品!'
-						)
 						isNoteUrl = true
 					}
 				}
 			} catch (apiErr) {
-				console.error('[DouyinParser] 策略 B 请求异常:', apiErr.message)
+				console.error('[DouyinParser] 策略 C 请求异常:', apiErr.message)
 			}
 		}
 
-		// 5. 策略 C: 尝试请求 iesdouyin 的 H5 Share 页面 (Mobile UA) 提取 _ROUTER_DATA
+		// 7. 策略 D: 尝试请求 iesdouyin 的 H5 Share 页面提取 _ROUTER_DATA（历史兜底）
 		if (!data) {
 			const pathsToTry = isNoteUrl ? ['note', 'video'] : ['video', 'note']
 			for (const pathType of pathsToTry) {
 				const shareHtmlUrl = `https://www.iesdouyin.com/share/${pathType}/${videoId}`
-				console.log(`[DouyinParser] 尝试策略 C (${pathType} 路径: ${shareHtmlUrl})...`)
+				console.log(`[DouyinParser] 尝试策略 D (${pathType} 路径: ${shareHtmlUrl})...`)
 
 				try {
 					const resp = await axios.get(shareHtmlUrl, {
@@ -140,7 +147,7 @@ class DouyinParser {
 							'User-Agent': MOBILE_UA,
 							Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
 						},
-						timeout: 8000
+						timeout: 6000
 					})
 					const html = resp.data || ''
 					const regex = /window\._ROUTER_DATA\s*=\s*(.*?)<\/script>/s
@@ -149,10 +156,6 @@ class DouyinParser {
 					if (match) {
 						const jsonData = JSON.parse(match[1].trim())
 						const loaderData = jsonData.loaderData || {}
-						console.log(
-							`[DouyinParser] 策略 C (${pathType}) loaderData keys:`,
-							Object.keys(loaderData)
-						)
 
 						let originalInfo
 						if (loaderData['note_(id)/page']) {
@@ -173,130 +176,13 @@ class DouyinParser {
 						) {
 							data = originalInfo.item_list[0]
 							console.log(
-								`[DouyinParser] 策略 C (${pathType}) 成功提取到 item_list[0]`
+								`[DouyinParser] 策略 D (${pathType}) 成功提取到 item_list[0]`
 							)
 							break
 						}
 					}
 				} catch (bErr) {
-					console.log(`[DouyinParser] 策略 C (${pathType}) 提取失败:`, bErr.message)
-				}
-			}
-		}
-
-		// 6. 策略 D: 尝试请求 douyin.com Web 页面 (Spider UA) 提取 application/ld+json (仅图文兜底)
-		if (!data) {
-			const pathsToTry = isNoteUrl ? ['note', 'video'] : ['note', 'video']
-			for (const pathType of pathsToTry) {
-				const webUrl = `https://www.douyin.com/${pathType}/${videoId}`
-				console.log(`[DouyinParser] 尝试策略 D (${pathType} 路径: ${webUrl})...`)
-
-				try {
-					const resp = await axios.get(webUrl, {
-						headers: {
-							'User-Agent': SPIDER_UA,
-							Referer: 'https://www.douyin.com/',
-							Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
-						},
-						timeout: 8000
-					})
-					const html = resp.data || ''
-					const jsonLdMatch = html.match(
-						/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
-					)
-
-					if (jsonLdMatch) {
-						for (const m of jsonLdMatch) {
-							const content = m
-								.replace(/<script[^>]*>/, '')
-								.replace(/<\/script>/, '')
-								.trim()
-							try {
-								const ldObj = JSON.parse(content)
-								if (ldObj['@type'] === 'article' || ldObj.image || ldObj.headline) {
-									const images = (
-										Array.isArray(ldObj.image) ? ldObj.image : [ldObj.image]
-									).filter(Boolean)
-
-									// 仅当真正提取到图片列表时才返回，避免视频落入 JSON-LD 返回空 url_list 假成功
-									if (images.length === 0) {
-										console.log(
-											`[DouyinParser] 策略 D (${pathType}) JSON-LD 无有效图片资源，跳过`
-										)
-										continue
-									}
-
-									console.log(
-										`[DouyinParser] 策略 D (${pathType}) 成功匹配到 schema.org JSON-LD 图文数据, 图片数: ${images.length}`
-									)
-
-									const authorObj = ldObj.author || {}
-
-									let diggCount = 0
-									let collectCount = 0
-									let shareCount = 0
-									let commentCount = 0
-
-									if (Array.isArray(ldObj.interactionStatistic)) {
-										ldObj.interactionStatistic.forEach((item) => {
-											const type = item.interactionType?.['@type'] || ''
-											const count = item.userInteractionCount || 0
-											if (type.includes('Like')) diggCount = count
-											else if (
-												type.includes('Share') ||
-												type.includes('Repost')
-											)
-												shareCount = count
-										})
-									}
-									if (ldObj.collectCount) collectCount = ldObj.collectCount
-									if (ldObj.commentCount) commentCount = ldObj.commentCount
-
-									let authorId = ''
-									if (authorObj.url) {
-										authorId = authorObj.url.split('/').pop()
-									}
-
-									let title =
-										ldObj.headline || ldObj.description || `douyin_${videoId}`
-									title = title.replace(/[\\/:*?"<>|]/g, '_')
-
-									const resultObj = {
-										project: {
-											project_id: videoId,
-											title: title,
-											desc: '',
-											type: 'image',
-											cover: images[0] || '',
-											url_list: images
-										},
-										author: {
-											author_id: authorId,
-											nickname: authorObj.name || '未知用户',
-											avatar: authorObj.image || ''
-										},
-										statistics: {
-											digg_count: diggCount,
-											comment_count: commentCount,
-											share_count: shareCount,
-											collect_count: collectCount
-										},
-										platform: 'douyin'
-									}
-
-									console.log(
-										`[DouyinParser] 策略 D (${pathType}) 解析完成:`,
-										resultObj.project.title
-									)
-									return resultObj
-								}
-							} catch (e) {
-								// 忽略单个 JSON 解析异常
-							}
-						}
-					}
-				} catch (cErr) {
-					console.log(`[DouyinParser] 策略 D (${pathType}) 提取失败:`, cErr.message)
+					console.log(`[DouyinParser] 策略 D (${pathType}) 提取失败:`, bErr.message)
 				}
 			}
 		}
@@ -387,6 +273,10 @@ class DouyinParser {
 		}
 
 		const stats = data.statistics || {}
+		const videoDataSize =
+			!isImage && data.video?.play_addr?.data_size
+				? parseInt(data.video.play_addr.data_size, 10)
+				: null
 
 		const parsedResult = {
 			// 作品信息
@@ -396,7 +286,8 @@ class DouyinParser {
 				desc: '',
 				type: isImage ? 'image' : 'video',
 				cover: coverImg[0] || '',
-				url_list: isImage ? allImg : videoUrl ? [videoUrl] : []
+				url_list: isImage ? allImg : videoUrl ? [videoUrl] : [],
+				...(videoDataSize ? { size_list: [videoDataSize] } : {})
 			},
 			// 作者信息
 			author: {
@@ -420,6 +311,110 @@ class DouyinParser {
 
 		console.log('[DouyinParser] 解析完成:', parsedResult.project.title)
 		return parsedResult
+	}
+
+	/**
+	 * 从 douyin.com Web 页面提取 schema.org JSON-LD 图文数据
+	 */
+	async tryParseJsonLd(videoId, pathsToTry = ['note', 'video']) {
+		for (const pathType of pathsToTry) {
+			const webUrl = `https://www.douyin.com/${pathType}/${videoId}`
+			console.log(`[DouyinParser] 尝试 JSON-LD (${pathType} 路径: ${webUrl})...`)
+
+			try {
+				const resp = await axios.get(webUrl, {
+					headers: {
+						'User-Agent': SPIDER_UA,
+						Referer: 'https://www.douyin.com/',
+						Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
+					},
+					timeout: 8000
+				})
+				const html = resp.data || ''
+				const jsonLdMatch = html.match(
+					/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
+				)
+
+				if (jsonLdMatch) {
+					for (const m of jsonLdMatch) {
+						const content = m
+							.replace(/<script[^>]*>/, '')
+							.replace(/<\/script>/, '')
+							.trim()
+						try {
+							const ldObj = JSON.parse(content)
+							if (ldObj['@type'] === 'article' || ldObj.image || ldObj.headline) {
+								const images = (
+									Array.isArray(ldObj.image) ? ldObj.image : [ldObj.image]
+								).filter(Boolean)
+
+								if (images.length === 0) continue
+
+								const authorObj = ldObj.author || {}
+								let diggCount = 0
+								let collectCount = 0
+								let shareCount = 0
+								let commentCount = 0
+
+								if (Array.isArray(ldObj.interactionStatistic)) {
+									ldObj.interactionStatistic.forEach((item) => {
+										const type = item.interactionType?.['@type'] || ''
+										const count = item.userInteractionCount || 0
+										if (type.includes('Like')) diggCount = count
+										else if (type.includes('Share') || type.includes('Repost'))
+											shareCount = count
+									})
+								}
+								if (ldObj.collectCount) collectCount = ldObj.collectCount
+								if (ldObj.commentCount) commentCount = ldObj.commentCount
+
+								let authorId = ''
+								if (authorObj.url) {
+									authorId = authorObj.url.split('/').pop()
+								}
+
+								let title =
+									ldObj.headline || ldObj.description || `douyin_${videoId}`
+								title = title.replace(/[\\/:*?"<>|]/g, '_')
+
+								const resultObj = {
+									project: {
+										project_id: videoId,
+										title: title,
+										desc: '',
+										type: 'image',
+										cover: images[0] || '',
+										url_list: images
+									},
+									author: {
+										author_id: authorId,
+										nickname: authorObj.name || '未知用户',
+										avatar: authorObj.image || ''
+									},
+									statistics: {
+										digg_count: diggCount,
+										comment_count: commentCount,
+										share_count: shareCount,
+										collect_count: collectCount
+									},
+									platform: 'douyin'
+								}
+
+								console.log(
+									`[DouyinParser] JSON-LD (${pathType}) 解析完成: ${resultObj.project.title} (${images.length} 张图)`
+								)
+								return resultObj
+							}
+						} catch (e) {
+							// 忽略单个 JSON 解析异常
+						}
+					}
+				}
+			} catch (cErr) {
+				console.log(`[DouyinParser] JSON-LD (${pathType}) 提取失败:`, cErr.message)
+			}
+		}
+		return null
 	}
 }
 

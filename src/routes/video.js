@@ -98,8 +98,14 @@ router.post('/parse', async (ctx) => {
 	try {
 		const videoInfo = await processor.parseShareUrl(inputText)
 
-		// 获取文件大小（仅针对视频获取大小，避免图集发送数十个 HEAD 请求导致接口超时）
-		if (videoInfo.project?.url_list) {
+		// 并行执行：文件大小检测（若解析器已自带 size_list 则跳过 HEAD 请求）+ 数据库记录写入
+		const hasKnownSize =
+			Array.isArray(videoInfo.project?.size_list) &&
+			videoInfo.project.size_list.some((s) => typeof s === 'number' && s > 0)
+
+		const sizeTask = (async () => {
+			if (!videoInfo.project?.url_list) return
+			if (hasKnownSize) return
 			if (videoInfo.project.type === 'video') {
 				const sizes = await Promise.all(
 					videoInfo.project.url_list.map((url) => getFileSize(url))
@@ -110,14 +116,13 @@ router.post('/parse', async (ctx) => {
 					null
 				)
 			}
-		}
+		})()
 
-		// 如果提供了 openid，记录到数据库
-		if (openid) {
+		const dbTask = (async () => {
+			if (!openid) return
 			try {
 				const pool = getPool()
 				if (pool) {
-					// 尝试提取视频标题或者描述
 					const title = videoInfo.project?.title || videoInfo.project?.desc || ''
 					const platform = videoInfo.platform || 'unknown'
 					const mediaType = videoInfo.project?.type || 'unknown'
@@ -134,9 +139,10 @@ router.post('/parse', async (ctx) => {
 				}
 			} catch (dbError) {
 				console.error('Failed to insert parse record:', dbError.message)
-				// 不阻断正常解析返回
 			}
-		}
+		})()
+
+		await Promise.all([sizeTask, dbTask])
 
 		// 默认包装为本地代理，解决小程序等端的跨域/白名单限制
 		// 传递 direct=1 则跳过包装，返回真实 CDN 地址（适用于 Web 端，节省服务器带宽）

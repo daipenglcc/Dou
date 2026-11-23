@@ -1,5 +1,6 @@
 const axios = require('axios')
 const { getRandomUA } = require('../userAgents')
+const { resolveRedirectUrl } = require('../resolveRedirect')
 
 /**
  * 快手平台解析器
@@ -13,13 +14,10 @@ class KuaishouParser {
 	async parseUrl(shareUrl) {
 		console.log('开始解析快手链接:', shareUrl)
 
-		// 第一步：跟随重定向，获取真实页面链接
-		const shareResp = await axios.get(shareUrl, {
-			headers: getRandomUA(),
-			maxRedirects: 5,
-			timeout: 10000
-		})
-		const realUrl = shareResp.request.res.responseUrl
+		// 第一步：仅通过 302 Location 轻量获取真实页面链接（不下载落地页 HTML）
+		const realUrl = shareUrl.includes('/fw/photo/')
+			? shareUrl
+			: await resolveRedirectUrl(shareUrl, { 'User-Agent': getRandomUA() })
 		console.log('重定向后的真实链接:', realUrl)
 
 		// 第二步：从重定向 URL 的查询参数中提取 photoId

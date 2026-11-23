@@ -1,5 +1,5 @@
 const axios = require('axios')
-const { getRandomUA } = require('../userAgents')
+const { resolveRedirectUrl } = require('../resolveRedirect')
 
 const MOBILE_UA =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
@@ -15,20 +15,13 @@ class ToutiaoParser {
 	 */
 	async parseUrl(shareUrl) {
 		let finalUrl = shareUrl
-		try {
-			const shareResp = await axios.get(shareUrl, {
-				headers: {
-					...getRandomUA(),
-					'User-Agent': MOBILE_UA
-				},
-				maxRedirects: 5,
-				timeout: 10000
-			})
-			finalUrl =
-				shareResp.request.res.responseUrl ||
-				shareResp.request.protocol + '//' + shareResp.request.host + shareResp.request.path
-		} catch (e) {
-			console.error('[ToutiaoParser] 重定向解析失败:', e.message)
+		if (
+			!/\/video\/\d+/.test(shareUrl) &&
+			!/\/a\d+\//.test(shareUrl) &&
+			!/\/i\d+\//.test(shareUrl) &&
+			!/[?&](?:group_id|item_id)=\d+/.test(shareUrl)
+		) {
+			finalUrl = await resolveRedirectUrl(shareUrl, { 'User-Agent': MOBILE_UA })
 		}
 		console.log('[ToutiaoParser] 最终链接:', finalUrl)
 
@@ -64,10 +57,13 @@ class ToutiaoParser {
 			throw err
 		}
 
-		// 2. 提取真实视频流地址
+		// 2. 提取真实视频流地址及文件大小
 		let videoUrl = ''
+		let videoSize = null
 		if (info.play_auth_token_v2) {
-			videoUrl = await this.fetchVodPlayUrl(info.play_auth_token_v2)
+			const vodInfo = await this.fetchVodPlayUrl(info.play_auth_token_v2)
+			videoUrl = vodInfo.url
+			videoSize = vodInfo.size
 		}
 		if (!videoUrl && Array.isArray(info.play_url_list) && info.play_url_list.length > 0) {
 			videoUrl = info.play_url_list[0].main_url || info.play_url_list[0].backup_url || ''
@@ -93,6 +89,7 @@ class ToutiaoParser {
 				type: 'video',
 				cover: info.poster_url || '',
 				url_list: [videoUrl],
+				...(videoSize ? { size_list: [videoSize] } : {}),
 				page_url: pageUrl,
 				duration: info.video_duration || 0
 			},
@@ -113,16 +110,16 @@ class ToutiaoParser {
 	}
 
 	/**
-	 * 通过 play_auth_token_v2 请求火山引擎点播接口获取真实 MP4 播放直链
+	 * 通过 play_auth_token_v2 请求火山引擎点播接口获取真实 MP4 播放直链与文件大小
 	 * @param {string} playAuthTokenV2 - Base64 编码的播放凭证
-	 * @returns {Promise<string>} 视频播放地址
+	 * @returns {Promise<{url: string, size: number|null}>} 视频播放地址与大小
 	 */
 	async fetchVodPlayUrl(playAuthTokenV2) {
 		try {
 			const decoded = Buffer.from(playAuthTokenV2, 'base64').toString('utf8')
 			const tokenObj = JSON.parse(decoded)
 			const queryStr = tokenObj.GetPlayInfoToken
-			if (!queryStr) return ''
+			if (!queryStr) return { url: '', size: null }
 
 			const vodResp = await axios.get(`https://vod.bytedanceapi.com/?${queryStr}`, {
 				headers: {
@@ -132,7 +129,7 @@ class ToutiaoParser {
 			})
 
 			const playList = vodResp.data?.Result?.Data?.PlayInfoList || []
-			if (!Array.isArray(playList) || playList.length === 0) return ''
+			if (!Array.isArray(playList) || playList.length === 0) return { url: '', size: null }
 
 			// 优先筛选 mp4 且 h264 编码，按清晰度/码率降序取最高清流
 			const mp4List = playList.filter((item) => item.Format === 'mp4' && item.MainPlayUrl)
@@ -142,10 +139,13 @@ class ToutiaoParser {
 
 			candidates.sort((a, b) => (b.Bitrate || 0) - (a.Bitrate || 0))
 			const best = candidates[0]
-			return best?.MainPlayUrl || best?.BackupPlayUrl || ''
+			return {
+				url: best?.MainPlayUrl || best?.BackupPlayUrl || '',
+				size: best?.Size ? parseInt(best.Size, 10) : null
+			}
 		} catch (e) {
 			console.error('[ToutiaoParser] 获取 VOD 播放地址失败:', e.message)
-			return ''
+			return { url: '', size: null }
 		}
 	}
 }
