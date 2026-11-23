@@ -29,7 +29,7 @@ const EXAMPLE_LINKS = [
 		platformName: '小红书',
 		type: 'image',
 		label: '小红书图片示例',
-		text: '就这样萌萌的看着你呀 小比格 https://xhslink.cn/o/4twzQsvcpLk 【小红书】里有精彩内容，快去瞧瞧！'
+		text: '“十岁那年，丢失的救命钱” https://xhslink.cn/o/89BaFwm4brA 存下这段话，去【小红书】速览笔记~'
 	},
 	{
 		platform: 'kuaishou',
@@ -50,7 +50,7 @@ const EXAMPLE_LINKS = [
 		platformName: '哔哩哔哩',
 		type: 'video',
 		label: '哔哩哔哩视频示例',
-		text: '【落花情-哔哩哔哩】 https://b23.tv/BV1NUnR6DEBT'
+		text: '【宅女在家大肆燃烧卡路里🔥-哔哩哔哩】 https://b23.tv/uXDA7WY'
 	},
 	{
 		platform: 'toutiao',

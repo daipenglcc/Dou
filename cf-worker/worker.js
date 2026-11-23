@@ -66,7 +66,7 @@ const EXAMPLE_LINKS = [
 		platformName: '抖音',
 		type: 'image',
 		label: '抖音图片示例',
-		text: '6.15 复制打开抖音，看看【雪加鸭嘴兽大板砖积木的图文作品】值得长期不换的壁纸# 蓝猫图库 # 手机墙纸 # ... https://v.douyin.com/g5-Y27aXErc/ 01/15 kca:/ B@G.iP :8pm '
+		text: '9.76 复制打开抖音，看看【ঞᐝ完美の的图文作品】好看的图片当然要分享给好看的你呀·ᰔ ᩚ。# 治愈... https://v.douyin.com/33ROpXvhz3Y/ 10/12 LWZ:/ j@C.hb'
 	},
 	{
 		platform: 'xiaohongshu',
@@ -80,7 +80,7 @@ const EXAMPLE_LINKS = [
 		platformName: '小红书',
 		type: 'image',
 		label: '小红书图片示例',
-		text: '就这样萌萌的看着你呀 小比格 https://xhslink.cn/o/4twzQsvcpLk 【小红书】里有精彩内容，快去瞧瞧！'
+		text: '“十岁那年，丢失的救命钱” https://xhslink.cn/o/89BaFwm4brA 存下这段话，去【小红书】速览笔记~'
 	},
 	{
 		platform: 'kuaishou',
@@ -101,7 +101,7 @@ const EXAMPLE_LINKS = [
 		platformName: '哔哩哔哩',
 		type: 'video',
 		label: '哔哩哔哩视频示例',
-		text: '【落花情-哔哩哔哩】 https://b23.tv/BV1NUnR6DEBT'
+		text: '【宅女在家大肆燃烧卡路里🔥-哔哩哔哩】 https://b23.tv/uXDA7WY'
 	},
 	{
 		platform: 'toutiao',
