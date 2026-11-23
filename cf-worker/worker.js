@@ -73,7 +73,7 @@ const EXAMPLE_LINKS = [
 		platformName: '小红书',
 		type: 'video',
 		label: '小红书视频示例',
-		text: '模特的无痕内衣选择？舒适塑形不突兀 夏天小透衫的救... https://xhslink.cn/o/3OL9bl6jCKY 保留口令，直达【小红书】围观~'
+		text: '小狗区别对待…… 爸爸：“小狗的爱也是分等级的是吧... https://xhslink.cn/o/6bhmoifHIPa 存好口令，直达【小红书】瞅瞅~'
 	},
 	{
 		platform: 'xiaohongshu',
