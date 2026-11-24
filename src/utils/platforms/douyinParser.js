@@ -6,6 +6,9 @@ const GOOGLEBOT_UA = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google
 const SPIDER_UA =
 	'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)'
 const BINGBOT_UA = 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)'
+const SOGOU_UA = 'Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)'
+const SPIDER360_UA =
+	'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36; 360Spider'
 const MOBILE_UA =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
 
@@ -316,135 +319,115 @@ class DouyinParser {
 	}
 
 	/**
-	 * 从 douyin.com Web 页面提取 schema.org JSON-LD 图文数据
-	 * 依次尝试 Googlebot / Baiduspider / Bingbot（无假 Cookie 优先），兼容海外 Vercel 与国内 IP
+	 * 从 iesdouyin.com / douyin.com 双域名提取 schema.org JSON-LD 图文数据
+	 * 分批并发竞速（5 蜘蛛 UA × 2 域名，不带伪造 Referer/Cookie），大幅提升云端 IP 穿透率
 	 */
 	async tryParseJsonLd(videoId, pathsToTry = ['note', 'video']) {
-		const headerProfiles = [
-			{
-				name: 'Googlebot',
-				headers: { 'User-Agent': GOOGLEBOT_UA }
-			},
-			{
-				name: 'Baiduspider',
-				headers: { 'User-Agent': SPIDER_UA, Referer: 'https://www.douyin.com/' }
-			},
-			{
-				name: 'Bingbot',
-				headers: { 'User-Agent': BINGBOT_UA }
-			},
-			{
-				name: 'Baiduspider+Cookie',
-				headers: {
-					'User-Agent': SPIDER_UA,
-					Referer: 'https://www.douyin.com/',
-					Cookie: `${DEFAULT_COOKIE}; tt_webid=${videoId}`
+		const fetchOne = async (webUrl, name, ua) => {
+			const resp = await axios.get(webUrl, {
+				headers: { 'User-Agent': ua },
+				timeout: 7000,
+				validateStatus: () => true
+			})
+			const html = typeof resp.data === 'string' ? resp.data : ''
+			const jsonLdMatch = html.match(
+				/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
+			)
+
+			if (!jsonLdMatch) {
+				console.log(
+					`[DouyinParser] JSON-LD (${name}) 无 ld+json, status=${resp.status}, len=${html.length}`
+				)
+				throw new Error('no ld+json')
+			}
+
+			for (const m of jsonLdMatch) {
+				const content = m
+					.replace(/<script[^>]*>/, '')
+					.replace(/<\/script>/, '')
+					.trim()
+				try {
+					const ldObj = JSON.parse(content)
+					if (ldObj['@type'] === 'article' || ldObj.image || ldObj.headline) {
+						const images = (
+							Array.isArray(ldObj.image) ? ldObj.image : [ldObj.image]
+						).filter(Boolean)
+
+						if (images.length === 0) continue
+
+						const authorObj = ldObj.author || {}
+						let diggCount = 0
+						let shareCount = 0
+						if (Array.isArray(ldObj.interactionStatistic)) {
+							ldObj.interactionStatistic.forEach((item) => {
+								const type = item.interactionType?.['@type'] || ''
+								const count = item.userInteractionCount || 0
+								if (type.includes('Like')) diggCount = count
+								else if (type.includes('Share') || type.includes('Repost'))
+									shareCount = count
+							})
+						}
+
+						const title = (
+							ldObj.headline ||
+							ldObj.description ||
+							`douyin_${videoId}`
+						).replace(/[\\/:*?"<>|]/g, '_')
+
+						const resultObj = {
+							project: {
+								project_id: videoId,
+								title,
+								desc: '',
+								type: 'image',
+								cover: images[0] || '',
+								url_list: images
+							},
+							author: {
+								author_id: authorObj.url ? authorObj.url.split('/').pop() : '',
+								nickname: authorObj.name || '未知用户',
+								avatar: authorObj.image || ''
+							},
+							statistics: {
+								digg_count: diggCount,
+								comment_count: ldObj.commentCount || 0,
+								share_count: shareCount,
+								collect_count: ldObj.collectCount || 0
+							},
+							platform: 'douyin'
+						}
+
+						console.log(
+							`[DouyinParser] JSON-LD (${name}) 解析完成: ${resultObj.project.title} (${images.length} 张图)`
+						)
+						return resultObj
+					}
+				} catch {
+					// 忽略单个 JSON 解析异常
 				}
 			}
-		]
+			throw new Error('empty images')
+		}
 
 		for (const pathType of pathsToTry) {
-			const webUrl = `https://www.douyin.com/${pathType}/${videoId}`
-			for (const profile of headerProfiles) {
-				console.log(
-					`[DouyinParser] 尝试 JSON-LD (${pathType} / ${profile.name}: ${webUrl})...`
-				)
+			const iesUrl = `https://www.iesdouyin.com/share/${pathType}/${videoId}/`
+			const wwwUrl = `https://www.douyin.com/${pathType}/${videoId}`
+			const batches = [
+				[
+					[iesUrl, `${pathType}/ies/Googlebot`, GOOGLEBOT_UA],
+					[wwwUrl, `${pathType}/www/Baiduspider`, SPIDER_UA]
+				],
+				[
+					[iesUrl, `${pathType}/ies/Sogou`, SOGOU_UA],
+					[wwwUrl, `${pathType}/www/360Spider`, SPIDER360_UA],
+					[iesUrl, `${pathType}/ies/Bingbot`, BINGBOT_UA]
+				]
+			]
+			for (const batch of batches) {
 				try {
-					const resp = await axios.get(webUrl, {
-						headers: profile.headers,
-						timeout: 8000,
-						validateStatus: () => true
-					})
-					const html = typeof resp.data === 'string' ? resp.data : ''
-					const jsonLdMatch = html.match(
-						/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
-					)
-
-					if (!jsonLdMatch) {
-						console.log(
-							`[DouyinParser] JSON-LD (${pathType}/${profile.name}) 无 ld+json, status=${resp.status}, len=${html.length}`
-						)
-						continue
-					}
-
-					for (const m of jsonLdMatch) {
-						const content = m
-							.replace(/<script[^>]*>/, '')
-							.replace(/<\/script>/, '')
-							.trim()
-						try {
-							const ldObj = JSON.parse(content)
-							if (ldObj['@type'] === 'article' || ldObj.image || ldObj.headline) {
-								const images = (
-									Array.isArray(ldObj.image) ? ldObj.image : [ldObj.image]
-								).filter(Boolean)
-
-								if (images.length === 0) continue
-
-								const authorObj = ldObj.author || {}
-								let diggCount = 0
-								let collectCount = 0
-								let shareCount = 0
-								let commentCount = 0
-
-								if (Array.isArray(ldObj.interactionStatistic)) {
-									ldObj.interactionStatistic.forEach((item) => {
-										const type = item.interactionType?.['@type'] || ''
-										const count = item.userInteractionCount || 0
-										if (type.includes('Like')) diggCount = count
-										else if (type.includes('Share') || type.includes('Repost'))
-											shareCount = count
-									})
-								}
-								if (ldObj.collectCount) collectCount = ldObj.collectCount
-								if (ldObj.commentCount) commentCount = ldObj.commentCount
-
-								let authorId = ''
-								if (authorObj.url) {
-									authorId = authorObj.url.split('/').pop()
-								}
-
-								let title =
-									ldObj.headline || ldObj.description || `douyin_${videoId}`
-								title = title.replace(/[\\/:*?"<>|]/g, '_')
-
-								const resultObj = {
-									project: {
-										project_id: videoId,
-										title: title,
-										desc: '',
-										type: 'image',
-										cover: images[0] || '',
-										url_list: images
-									},
-									author: {
-										author_id: authorId,
-										nickname: authorObj.name || '未知用户',
-										avatar: authorObj.image || ''
-									},
-									statistics: {
-										digg_count: diggCount,
-										comment_count: commentCount,
-										share_count: shareCount,
-										collect_count: collectCount
-									},
-									platform: 'douyin'
-								}
-
-								console.log(
-									`[DouyinParser] JSON-LD (${pathType}/${profile.name}) 解析完成: ${resultObj.project.title} (${images.length} 张图)`
-								)
-								return resultObj
-							}
-						} catch (e) {
-							// 忽略单个 JSON 解析异常
-						}
-					}
-				} catch (cErr) {
-					console.log(
-						`[DouyinParser] JSON-LD (${pathType}/${profile.name}) 提取失败:`,
-						cErr.message
-					)
+					return await Promise.any(batch.map(([u, n, ua]) => fetchOne(u, n, ua)))
+				} catch {
+					// 当前批次全部被拦，切换下一批次
 				}
 			}
 		}

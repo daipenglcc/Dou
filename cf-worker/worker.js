@@ -19,6 +19,9 @@ const GOOGLEBOT_UA = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google
 const BAIDUSPIDER_UA =
 	'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)'
 const BINGBOT_UA = 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)'
+const SOGOU_UA = 'Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)'
+const SPIDER360_UA =
+	'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36; 360Spider'
 
 // 允许代理的官方媒体 CDN 域名白名单（防滥用刷流量）
 const ALLOWED_HOST_SUFFIXES = [
@@ -176,81 +179,95 @@ function wrapUrlsWithProxy(data, base) {
 	}
 }
 
-// ── 抖音解析 ─────────────────────────────────────────────
+// ── 抖音解析（双域名 × 5 蜘蛛 UA 分批并发竞速 + slidesinfo） ──
 async function tryDouyinJsonLd(videoId, paths = ['note']) {
-	const uas = [GOOGLEBOT_UA, BAIDUSPIDER_UA, BINGBOT_UA]
-	for (const pathType of paths) {
-		const webUrl = `https://www.douyin.com/${pathType}/${videoId}`
-		for (const ua of uas) {
+	const fetchOne = async (webUrl, ua) => {
+		const resp = await fetch(webUrl, { headers: { 'User-Agent': ua } })
+		const html = await resp.text()
+		const matches = html.match(
+			/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
+		)
+		if (!matches) throw new Error('no ld+json')
+		for (const m of matches) {
+			const content = m
+				.replace(/<script[^>]*>/, '')
+				.replace(/<\/script>/, '')
+				.trim()
 			try {
-				const resp = await fetch(webUrl, {
-					headers: { 'User-Agent': ua, Referer: 'https://www.douyin.com/' }
-				})
-				const html = await resp.text()
-				const matches = html.match(
-					/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
-				)
-				if (!matches) continue
-				for (const m of matches) {
-					const content = m
-						.replace(/<script[^>]*>/, '')
-						.replace(/<\/script>/, '')
-						.trim()
-					try {
-						const ldObj = JSON.parse(content)
-						if (ldObj['@type'] === 'article' || ldObj.image || ldObj.headline) {
-							const images = (
-								Array.isArray(ldObj.image) ? ldObj.image : [ldObj.image]
-							).filter(Boolean)
-							if (images.length === 0) continue
+				const ldObj = JSON.parse(content)
+				if (ldObj['@type'] === 'article' || ldObj.image || ldObj.headline) {
+					const images = (
+						Array.isArray(ldObj.image) ? ldObj.image : [ldObj.image]
+					).filter(Boolean)
+					if (images.length === 0) continue
 
-							const authorObj = ldObj.author || {}
-							let diggCount = 0
-							let shareCount = 0
-							if (Array.isArray(ldObj.interactionStatistic)) {
-								ldObj.interactionStatistic.forEach((item) => {
-									const type = item.interactionType?.['@type'] || ''
-									const count = item.userInteractionCount || 0
-									if (type.includes('Like')) diggCount = count
-									else if (type.includes('Share') || type.includes('Repost'))
-										shareCount = count
-								})
-							}
-							const title = (
-								ldObj.headline ||
-								ldObj.description ||
-								`douyin_${videoId}`
-							).replace(/[\\/:*?"<>|]/g, '_')
-							return {
-								project: {
-									project_id: videoId,
-									title,
-									desc: '',
-									type: 'image',
-									cover: images[0] || '',
-									url_list: images,
-									size_list: new Array(images.length).fill(null)
-								},
-								author: {
-									author_id: authorObj.url ? authorObj.url.split('/').pop() : '',
-									nickname: authorObj.name || '未知用户',
-									avatar: authorObj.image || ''
-								},
-								statistics: {
-									digg_count: diggCount,
-									comment_count: ldObj.commentCount || 0,
-									share_count: shareCount,
-									collect_count: ldObj.collectCount || 0
-								},
-								platform: 'douyin'
-							}
-						}
-					} catch {
-						// 忽略单条无效 JSON-LD
+					const authorObj = ldObj.author || {}
+					let diggCount = 0
+					let shareCount = 0
+					if (Array.isArray(ldObj.interactionStatistic)) {
+						ldObj.interactionStatistic.forEach((item) => {
+							const type = item.interactionType?.['@type'] || ''
+							const count = item.userInteractionCount || 0
+							if (type.includes('Like')) diggCount = count
+							else if (type.includes('Share') || type.includes('Repost'))
+								shareCount = count
+						})
+					}
+					const title = (
+						ldObj.headline ||
+						ldObj.description ||
+						`douyin_${videoId}`
+					).replace(/[\\/:*?"<>|]/g, '_')
+					return {
+						project: {
+							project_id: videoId,
+							title,
+							desc: '',
+							type: 'image',
+							cover: images[0] || '',
+							url_list: images,
+							size_list: new Array(images.length).fill(null)
+						},
+						author: {
+							author_id: authorObj.url ? authorObj.url.split('/').pop() : '',
+							nickname: authorObj.name || '未知用户',
+							avatar: authorObj.image || ''
+						},
+						statistics: {
+							digg_count: diggCount,
+							comment_count: ldObj.commentCount || 0,
+							share_count: shareCount,
+							collect_count: ldObj.collectCount || 0
+						},
+						platform: 'douyin'
 					}
 				}
 			} catch {
-				// 当前 UA 失败，切换下一个蜘蛛 UA
+				// 忽略单条无效 JSON-LD
+			}
+		}
+		throw new Error('empty images')
+	}
+
+	for (const pathType of paths) {
+		const iesUrl = `https://www.iesdouyin.com/share/${pathType}/${videoId}/`
+		const wwwUrl = `https://www.douyin.com/${pathType}/${videoId}`
+		const batches = [
+			[
+				[iesUrl, GOOGLEBOT_UA],
+				[wwwUrl, BAIDUSPIDER_UA]
+			],
+			[
+				[iesUrl, SOGOU_UA],
+				[wwwUrl, SPIDER360_UA],
+				[iesUrl, BINGBOT_UA]
+			]
+		]
+		for (const batch of batches) {
+			try {
+				return await Promise.any(batch.map(([u, ua]) => fetchOne(u, ua)))
+			} catch {
+				// 当前批次全部被拦，切换下一批次
 			}
 		}
 	}
@@ -953,8 +970,39 @@ export default {
 
 			try {
 				let videoInfo
-				if (platform === 'douyin') videoInfo = await parseDouyin(shareUrl)
-				else if (platform === 'kuaishou') videoInfo = await parseKuaishou(shareUrl)
+				if (platform === 'douyin') {
+					try {
+						videoInfo = await parseDouyin(shareUrl)
+					} catch (dyErr) {
+						if (dyErr.isUserFacing) throw dyErr
+						// 抖音遇边缘 IP 限频时，先回源 Vercel 香港机房兜底
+						const fbResp = await fallbackToOrigin()
+						if (fbResp.status === 200) return fbResp
+						// 若配置了外部垫底解析服务（环境变量 DOUYIN_FALLBACK_API），自动降级调用
+						if (env?.DOUYIN_FALLBACK_API) {
+							const extResp = await fetch(env.DOUYIN_FALLBACK_API, {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({
+									shareText: inputText,
+									direct: isDirect ? 1 : 0
+								})
+							})
+							if (extResp.ok) {
+								const extText = await extResp.text()
+								return new Response(extText, {
+									status: 200,
+									headers: {
+										'Content-Type': 'application/json; charset=utf-8',
+										'X-Cache': 'FALLBACK',
+										...CORS_HEADERS
+									}
+								})
+							}
+						}
+						return fbResp
+					}
+				} else if (platform === 'kuaishou') videoInfo = await parseKuaishou(shareUrl)
 				else if (platform === 'toutiao') videoInfo = await parseToutiao(shareUrl)
 				else if (platform === 'bilibili') {
 					try {
