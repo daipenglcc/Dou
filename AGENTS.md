@@ -122,3 +122,4 @@ jsonStr = jsonStr.replace(/undefined/g, 'null')
 2. **平台解析逻辑**：修改 `src/utils/platforms/*Parser.js` 或 `src/utils/platformProcessor.js`（新增平台、调整域名匹配、修复风控/提取逻辑）时，必须同步更新 `cf-worker/worker.js` 中对应的解析函数与 `detectPlatform`。
 3. **代理下载与白名单**：修改 `src/routes/video.js` 中的 `/api/proxyFile`、`/api/download-stream`、Referer 规则、响应头或返回结构时，必须同步更新 `cf-worker/worker.js` 中对应的处理逻辑与 `ALLOWED_HOST_SUFFIXES`。
 4. **提交前自检**：执行 `git commit` 前，需检查 `src/` 与 `cf-worker/worker.js` 是否存在不同步的逻辑或配置，避免线上 `download.vues.cn` 与主站代码脱节。
+5. **中文提交规范**：所有 Git 提交信息（`git commit -m`）必须使用**中文**描述（如 `feat: ...`、`fix: ...`、`perf: ...`、`chore: ...`），严禁使用纯英文提交信息。

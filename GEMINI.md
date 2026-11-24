@@ -67,3 +67,4 @@
 ### 【强制规范】Cloudflare Worker 同步自检
 - 生产环境的 `/api/parse`、`/api/examples`、`/api/proxyFile`、`/api/download-stream` 由 `cf-worker/worker.js`（`https://download.vues.cn`）承载。
 - **凡修改 `src/utils/examples.js`、`src/utils/platformProcessor.js`、`src/utils/platforms/*` 或 `src/routes/video.js` 中的解析/代理逻辑，必须强制自检并同步更新 `cf-worker/worker.js`**，提交前务必核对两者一致，严禁只改 `src/` 漏改 `cf-worker/worker.js`。
+- **Git 提交规范**：所有 `git commit` 提交信息必须使用**中文**编写，严禁使用纯英文 commit message。
