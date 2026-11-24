@@ -1,6 +1,5 @@
 const axios = require('axios')
 const { getRandomUA } = require('../userAgents')
-const { resolveRedirectUrl } = require('../resolveRedirect')
 
 /**
  * 快手平台解析器
@@ -14,29 +13,27 @@ class KuaishouParser {
 	async parseUrl(shareUrl) {
 		console.log('开始解析快手链接:', shareUrl)
 
-		// 第一步：仅通过 302 Location 轻量获取真实页面链接（不下载落地页 HTML）
-		const realUrl = shareUrl.includes('/fw/photo/')
-			? shareUrl
-			: await resolveRedirectUrl(shareUrl, { 'User-Agent': getRandomUA() })
+		// 一次请求自动跟随重定向并获取页面 HTML（减少一次完整往返）
+		const pageResp = await axios.get(shareUrl, {
+			headers: {
+				'User-Agent': getRandomUA(),
+				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+				'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2'
+			},
+			maxRedirects: 5,
+			timeout: 15000
+		})
+
+		const realUrl = pageResp.request?.res?.responseUrl || shareUrl
 		console.log('重定向后的真实链接:', realUrl)
 
-		// 第二步：从重定向 URL 的查询参数中提取 photoId
+		// 从最终 URL 中提取 photoId
 		const photoIdMatch = realUrl.match(/\/fw\/photo\/([a-zA-Z0-9]+)/)
 		if (!photoIdMatch) {
 			throw new Error('无法从链接中提取作品ID')
 		}
 		const shortPhotoId = photoIdMatch[1]
 		console.log('提取到的作品ID:', shortPhotoId)
-
-		// 第三步：获取页面内容
-		const pageResp = await axios.get(realUrl, {
-			headers: {
-				'User-Agent': getRandomUA(),
-				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-				'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2'
-			},
-			timeout: 15000
-		})
 
 		const html = pageResp.data
 

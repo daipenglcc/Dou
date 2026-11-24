@@ -365,19 +365,19 @@ function findKuaishouPhoto(obj, depth = 0) {
 }
 
 async function parseKuaishou(shareUrl) {
-	const realUrl = shareUrl.includes('/fw/photo/')
-		? shareUrl
-		: await resolveRedirect(shareUrl, MOBILE_UA)
-	const shortPhotoId = realUrl.match(/\/fw\/photo\/([a-zA-Z0-9]+)/)?.[1]
-	if (!shortPhotoId) throw new Error('无法从链接中提取快手作品 ID')
-
-	const resp = await fetch(realUrl, {
+	// 一次请求自动跟随重定向并拉取页面 HTML，省掉单独的 302 往返
+	const resp = await fetch(shareUrl, {
 		headers: {
 			'User-Agent': MOBILE_UA,
 			Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 			'Accept-Language': 'zh-CN,zh;q=0.9'
-		}
+		},
+		redirect: 'follow'
 	})
+	const realUrl = resp.url || shareUrl
+	const shortPhotoId = realUrl.match(/\/fw\/photo\/([a-zA-Z0-9]+)/)?.[1]
+	if (!shortPhotoId) throw new Error('无法从链接中提取快手作品 ID')
+
 	const html = await resp.text()
 	const stateStart = html.indexOf('window.INIT_STATE')
 	if (stateStart === -1) throw new Error('无法从快手页面提取数据')
@@ -605,6 +605,189 @@ async function parseBilibili(shareUrl) {
 	}
 }
 
+// ── 小红书解析（桌面端 + 移动端 H5 双策略，失败再回源） ──
+function parseXhsCount(val) {
+	if (typeof val === 'number') return Number.isFinite(val) ? val : 0
+	if (!val) return 0
+	const str = String(val).replace(/,/g, '').trim()
+	if (/万$/.test(str)) return Math.round(parseFloat(str) * 10000) || 0
+	if (/[kK]$/.test(str)) return Math.round(parseFloat(str) * 1000) || 0
+	return parseInt(str, 10) || 0
+}
+
+async function parseXiaohongshu(shareUrl) {
+	const strategies = [
+		{
+			name: 'Desktop',
+			headers: {
+				'User-Agent': DESKTOP_UA,
+				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+				'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
+			}
+		},
+		{
+			name: 'Mobile',
+			headers: {
+				'User-Agent': MOBILE_UA,
+				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+				'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
+			}
+		}
+	]
+
+	let lastErr = null
+	for (const s of strategies) {
+		try {
+			const resp = await fetch(shareUrl, { headers: s.headers, redirect: 'follow' })
+			const realUrl = resp.url || shareUrl
+			const html = await resp.text()
+
+			if (resp.status >= 400) throw new Error(`小红书请求被拦截 (HTTP ${resp.status})`)
+			if (realUrl.includes('website-login/captcha') || html.includes('安全限制')) {
+				throw new Error('小红书触发安全验证')
+			}
+
+			let noteId =
+				realUrl.match(/\/(?:explore|discovery\/item|note)\/([a-zA-Z0-9_-]+)/)?.[1] || null
+			if (!noteId && realUrl.includes('redirectPath=')) {
+				try {
+					const rp = decodeURIComponent(realUrl.split('redirectPath=')[1].split('&')[0])
+					noteId =
+						rp.match(/\/(?:explore|discovery\/item|note)\/([a-zA-Z0-9_-]+)/)?.[1] ||
+						null
+				} catch {
+					// ignore
+				}
+			}
+
+			const isNotFound =
+				realUrl.includes('/404') ||
+				realUrl.includes('error_code=300031') ||
+				html.includes('当前笔记暂时无法浏览')
+
+			const scriptMatch =
+				html.match(/window\.__INITIAL_STATE__\s*=\s*({.*?})\s*<\/script>/s) ||
+				html.match(/window\.__INITIAL_SSR_STATE__\s*=\s*({.*?})\s*<\/script>/s)
+			if (!scriptMatch) {
+				if (isNotFound) {
+					const err = new Error(
+						'抱歉，该小红书笔记不存在、已被作者下架删除或设为私密不可见~'
+					)
+					err.isUserFacing = true
+					throw err
+				}
+				throw new Error(`无法提取小红书初始数据 (${s.name})`)
+			}
+
+			const jsonData = JSON.parse(scriptMatch[1].replace(/undefined/g, 'null'))
+			let noteData = null
+			const noteDetailMap = jsonData.note?.noteDetailMap
+			if (noteDetailMap) {
+				if (!noteId) noteId = Object.keys(noteDetailMap)[0]
+				if (!noteId && jsonData.note?.firstNoteId) noteId = jsonData.note.firstNoteId
+				noteData = noteId ? noteDetailMap[noteId]?.note : null
+				if (!noteData) {
+					const firstKey = Object.keys(noteDetailMap)[0]
+					noteData = noteDetailMap[firstKey]?.note
+				}
+			}
+			if (!noteData && jsonData.noteData?.data?.noteData) {
+				noteData = jsonData.noteData.data.noteData
+				if (!noteId && noteData.noteId) noteId = noteData.noteId
+			}
+
+			if (!noteData) {
+				if (isNotFound) {
+					const err = new Error(
+						'抱歉，该小红书笔记不存在、已被作者下架删除或设为私密不可见~'
+					)
+					err.isUserFacing = true
+					throw err
+				}
+				throw new Error(`未找到小红书笔记数据 (${s.name})`)
+			}
+
+			const isVideo = noteData.type === 'video' || Boolean(noteData.video?.media)
+			let videoUrl = null
+			let cover = ''
+			let allImg = []
+
+			if (isVideo && noteData.video) {
+				const ms = noteData.video.media?.stream
+				const streamList = ms?.h264 || ms?.h265 || ms?.av1
+				if (streamList?.length) {
+					videoUrl = streamList[0].masterUrl || streamList[0].backupUrl?.[0]
+				} else if (noteData.video.url) {
+					videoUrl = noteData.video.url
+				}
+				if (videoUrl) videoUrl = videoUrl.replace(/^http:/, 'https:')
+				const firstImg = noteData.imageList?.[0]
+				cover = (
+					firstImg?.urlDefault ||
+					firstImg?.urlPre ||
+					firstImg?.url ||
+					firstImg?.infoList?.[0]?.url ||
+					noteData.cover?.url ||
+					''
+				).replace(/^http:/, 'https:')
+			} else {
+				allImg = (noteData.imageList || [])
+					.map((img) =>
+						(
+							img.urlDefault ||
+							img.urlPre ||
+							img.url ||
+							img.infoList?.[0]?.url ||
+							''
+						).replace(/^http:/, 'https:')
+					)
+					.filter(Boolean)
+				cover = allImg[0] || ''
+			}
+
+			const urlList = isVideo ? (videoUrl ? [videoUrl] : []) : allImg
+			if (urlList.length === 0) throw new Error('未能提取到小红书媒体地址')
+
+			const userObj = noteData.user || {}
+			const interact = noteData.interactInfo || {}
+			const title = (noteData.title || noteData.desc || `xiaohongshu_${noteId}`).replace(
+				/[\\/:*?"<>|]/g,
+				'_'
+			)
+
+			return {
+				project: {
+					project_id: noteId || 'unknown',
+					title,
+					desc: noteData.desc || '',
+					type: isVideo ? 'video' : 'image',
+					cover,
+					url_list: urlList,
+					size_list: new Array(urlList.length).fill(null)
+				},
+				author: {
+					author_id: userObj.userId || userObj.redId || '',
+					nickname: userObj.nickname || userObj.nickName || '未知用户',
+					avatar: (userObj.avatar || '')
+						.replace(/^http:/, 'https:')
+						.replace(/w\/\d+/, 'w/720')
+				},
+				statistics: {
+					digg_count: parseXhsCount(interact.likedCount),
+					comment_count: parseXhsCount(interact.commentCount),
+					share_count: parseXhsCount(interact.shareCount),
+					collect_count: parseXhsCount(interact.collectedCount)
+				},
+				platform: 'xiaohongshu'
+			}
+		} catch (err) {
+			if (err.isUserFacing) throw err
+			lastErr = err
+		}
+	}
+	throw lastErr || new Error('无法从小红书页面提取有效数据')
+}
+
 // ── 统一入口 ─────────────────────────────────────────────
 export default {
 	async fetch(request, env, ctx) {
@@ -669,6 +852,104 @@ export default {
 			const platform = detectPlatform(shareUrl)
 			const isDirect =
 				String(body.direct) === '1' || String(reqUrl.searchParams.get('direct')) === '1'
+			const noCache =
+				String(body.nocache) === '1' || String(reqUrl.searchParams.get('nocache')) === '1'
+
+			// 异步上报解析记录到主站数据库（0ms 额外延迟，不阻塞返回）
+			const reportRecordAsync = (videoInfo) => {
+				if (!body.openid || !ctx || typeof ctx.waitUntil !== 'function' || !videoInfo)
+					return
+				ctx.waitUntil(
+					fetch(`${FALLBACK_ORIGIN}/api/records`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							openid: body.openid,
+							platform: videoInfo.platform || platform || 'unknown',
+							media_type: videoInfo.project?.type || 'unknown',
+							url: inputText,
+							title: videoInfo.project?.title || videoInfo.project?.desc || ''
+						})
+					}).catch(() => {
+						// 忽略记录上报失败，不影响主解析流程
+					})
+				)
+			}
+
+			// Cloudflare 边缘缓存（5 分钟 TTL）：重复链接/示例/分享直出 <100ms
+			const edgeCache =
+				typeof globalThis.caches !== 'undefined' ? globalThis.caches.default : null
+			const cacheKey = new Request(
+				`https://cache.dou.internal/parse?direct=${isDirect ? 1 : 0}&url=${encodeURIComponent(shareUrl)}`,
+				{ method: 'GET' }
+			)
+
+			if (edgeCache && !noCache) {
+				try {
+					const cached = await edgeCache.match(cacheKey)
+					if (cached) {
+						const cachedText = await cached.text()
+						try {
+							const parsed = JSON.parse(cachedText)
+							reportRecordAsync(parsed?.data)
+						} catch {
+							// ignore
+						}
+						return new Response(cachedText, {
+							status: 200,
+							headers: {
+								'Content-Type': 'application/json; charset=utf-8',
+								'X-Cache': 'HIT',
+								...CORS_HEADERS
+							}
+						})
+					}
+				} catch {
+					// 忽略边缘缓存读取异常
+				}
+			}
+
+			const fallbackToOrigin = async () => {
+				const fb = await fetch(`${FALLBACK_ORIGIN}/api/parse`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						shareText: inputText,
+						openid: body.openid,
+						direct: isDirect ? 1 : 0
+					})
+				})
+				const fbText = await fb.text()
+				if (edgeCache && !noCache && fb.status === 200 && ctx?.waitUntil) {
+					try {
+						const parsed = JSON.parse(fbText)
+						if (parsed?.success && parsed?.data) {
+							ctx.waitUntil(
+								edgeCache.put(
+									cacheKey,
+									new Response(fbText, {
+										status: 200,
+										headers: {
+											'Content-Type': 'application/json; charset=utf-8',
+											'Cache-Control': 'public, max-age=300'
+										}
+									})
+								)
+							)
+						}
+					} catch {
+						// ignore
+					}
+				}
+				return new Response(fbText, {
+					status: fb.status,
+					headers: {
+						'Content-Type': 'application/json; charset=utf-8',
+						'X-Cache': 'MISS',
+						...CORS_HEADERS
+					}
+				})
+			}
 
 			try {
 				let videoInfo
@@ -679,42 +960,15 @@ export default {
 					try {
 						videoInfo = await parseBilibili(shareUrl)
 					} catch {
-						// B 站遇风控自动回源主站兜底
-						const fb = await fetch(`${FALLBACK_ORIGIN}/api/parse`, {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({
-								shareText: inputText,
-								openid: body.openid,
-								direct: isDirect ? 1 : 0
-							})
-						})
-						return new Response(fb.body, {
-							status: fb.status,
-							headers: {
-								'Content-Type': 'application/json; charset=utf-8',
-								...CORS_HEADERS
-							}
-						})
+						return await fallbackToOrigin()
 					}
 				} else if (platform === 'xiaohongshu') {
-					// 小红书自动回源主站兜底
-					const fb = await fetch(`${FALLBACK_ORIGIN}/api/parse`, {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							shareText: inputText,
-							openid: body.openid,
-							direct: isDirect ? 1 : 0
-						})
-					})
-					return new Response(fb.body, {
-						status: fb.status,
-						headers: {
-							'Content-Type': 'application/json; charset=utf-8',
-							...CORS_HEADERS
-						}
-					})
+					try {
+						videoInfo = await parseXiaohongshu(shareUrl)
+					} catch (xhsErr) {
+						if (xhsErr.isUserFacing) throw xhsErr
+						return await fallbackToOrigin()
+					}
 				} else {
 					return jsonResponse(
 						{ success: false, error: `暂不支持该平台: ${platform}` },
@@ -726,30 +980,37 @@ export default {
 					wrapUrlsWithProxy(videoInfo, `${reqUrl.origin}/api/proxyFile?url=`)
 				}
 
-				// 异步上报解析记录到主站数据库（0ms 额外延迟，不阻塞返回）
-				if (body.openid && ctx && typeof ctx.waitUntil === 'function') {
-					ctx.waitUntil(
-						fetch(`${FALLBACK_ORIGIN}/api/records`, {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({
-								openid: body.openid,
-								platform: videoInfo.platform || platform || 'unknown',
-								media_type: videoInfo.project?.type || 'unknown',
-								url: inputText,
-								title: videoInfo.project?.title || videoInfo.project?.desc || ''
-							})
-						}).catch(() => {
-							// 忽略记录上报失败，不影响主解析流程
-						})
-					)
-				}
+				reportRecordAsync(videoInfo)
 
-				return jsonResponse({
+				const payloadText = JSON.stringify({
 					success: true,
 					data: videoInfo,
 					message: '解析成功',
 					timestamp: new Date().toISOString()
+				})
+
+				if (edgeCache && !noCache && ctx?.waitUntil) {
+					ctx.waitUntil(
+						edgeCache.put(
+							cacheKey,
+							new Response(payloadText, {
+								status: 200,
+								headers: {
+									'Content-Type': 'application/json; charset=utf-8',
+									'Cache-Control': 'public, max-age=300'
+								}
+							})
+						)
+					)
+				}
+
+				return new Response(payloadText, {
+					status: 200,
+					headers: {
+						'Content-Type': 'application/json; charset=utf-8',
+						'X-Cache': 'MISS',
+						...CORS_HEADERS
+					}
 				})
 			} catch (error) {
 				const platformNames = {

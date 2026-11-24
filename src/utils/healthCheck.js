@@ -127,7 +127,7 @@ async function parseViaProductionOrLocal(item, processor) {
 
 	const resp = await axios.post(
 		WORKER_PARSE_URL,
-		{ shareText: item.url, direct: 1 },
+		{ shareText: item.url, direct: 1, nocache: 1 },
 		{
 			headers: { 'Content-Type': 'application/json' },
 			timeout: 15000,
@@ -142,73 +142,92 @@ async function parseViaProductionOrLocal(item, processor) {
 }
 
 /**
- * 执行全部平台的解析自检（串行逐项检测，避免同平台并发请求触发风控）
+ * 检测单个测试用例
+ */
+async function checkSingleCase(item, processor) {
+	const t0 = Date.now()
+	try {
+		const data = await parseViaProductionOrLocal(item, processor)
+		const durationMs = Date.now() - t0
+		const project = data?.project || {}
+		const urlList = Array.isArray(project.url_list) ? project.url_list : []
+
+		if (urlList.length === 0) {
+			return {
+				...item,
+				ok: false,
+				durationMs,
+				title: project.title || '',
+				author: data?.author?.nickname || '',
+				mediaCount: 0,
+				error: '解析结果 url_list 为空'
+			}
+		}
+
+		const mediaCheck = await checkMediaUrl(urlList[0])
+		const typeMatch = project.type === item.expectedType
+		const ok = mediaCheck.ok && typeMatch
+
+		let error = ''
+		if (!typeMatch) {
+			error = `类型不匹配: 期望 ${item.expectedType}, 实际 ${project.type}`
+		} else if (!mediaCheck.ok) {
+			error = `媒体直链异常: ${mediaCheck.reason}`
+		}
+
+		return {
+			...item,
+			ok,
+			durationMs,
+			type: project.type,
+			title: (project.title || '').slice(0, 40),
+			author: data?.author?.nickname || '未知用户',
+			mediaCount: urlList.length,
+			hasCover: Boolean(project.cover),
+			mediaType: mediaCheck.contentType || '-',
+			mediaSize: formatSize(mediaCheck.size),
+			error
+		}
+	} catch (e) {
+		return {
+			...item,
+			ok: false,
+			durationMs: Date.now() - t0,
+			title: '',
+			author: '',
+			mediaCount: 0,
+			hasCover: false,
+			mediaType: '-',
+			mediaSize: '-',
+			error: e.message
+		}
+	}
+}
+
+/**
+ * 执行全部平台的解析自检（跨平台并行、同平台内串行，兼顾速度与防并发风控）
  */
 async function runHealthCheck() {
 	const processor = new PlatformProcessor()
 	const startedAt = Date.now()
-	const results = []
 
-	for (const item of TEST_CASES) {
-		const t0 = Date.now()
-		try {
-			const data = await parseViaProductionOrLocal(item, processor)
-			const durationMs = Date.now() - t0
-			const project = data?.project || {}
-			const urlList = Array.isArray(project.url_list) ? project.url_list : []
-
-			if (urlList.length === 0) {
-				results.push({
-					...item,
-					ok: false,
-					durationMs,
-					title: project.title || '',
-					author: data?.author?.nickname || '',
-					mediaCount: 0,
-					error: '解析结果 url_list 为空'
-				})
-				continue
-			}
-
-			const mediaCheck = await checkMediaUrl(urlList[0])
-			const typeMatch = project.type === item.expectedType
-			const ok = mediaCheck.ok && typeMatch
-
-			let error = ''
-			if (!typeMatch) {
-				error = `类型不匹配: 期望 ${item.expectedType}, 实际 ${project.type}`
-			} else if (!mediaCheck.ok) {
-				error = `媒体直链异常: ${mediaCheck.reason}`
-			}
-
-			results.push({
-				...item,
-				ok,
-				durationMs,
-				type: project.type,
-				title: (project.title || '').slice(0, 40),
-				author: data?.author?.nickname || '未知用户',
-				mediaCount: urlList.length,
-				hasCover: Boolean(project.cover),
-				mediaType: mediaCheck.contentType || '-',
-				mediaSize: formatSize(mediaCheck.size),
-				error
-			})
-		} catch (e) {
-			results.push({
-				...item,
-				ok: false,
-				durationMs: Date.now() - t0,
-				title: '',
-				author: '',
-				mediaCount: 0,
-				hasCover: false,
-				mediaType: '-',
-				mediaSize: '-',
-				error: e.message
-			})
+	// 按平台分组：不同平台并发执行，同一平台内串行执行
+	const platformGroups = new Map()
+	TEST_CASES.forEach((item, index) => {
+		if (!platformGroups.has(item.platform)) {
+			platformGroups.set(item.platform, [])
 		}
-	}
+		platformGroups.get(item.platform).push({ item, index })
+	})
+
+	const results = new Array(TEST_CASES.length)
+	await Promise.all(
+		Array.from(platformGroups.values()).map(async (entries) => {
+			for (const { item, index } of entries) {
+				results[index] = await checkSingleCase(item, processor)
+			}
+		})
+	)
 
 	const passed = results.filter((r) => r.ok).length
 	const failed = results.length - passed
